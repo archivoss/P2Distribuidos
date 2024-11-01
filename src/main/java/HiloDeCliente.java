@@ -2,6 +2,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -67,7 +68,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                     for (HiloDeCliente hilo : lista) {
                         if (hilo.getNombreUsuario().equals(nombreDestinatario)) {
                             try {
-                                dataOutput.writeUTF("Mensaje privado enviado a " + nombreDestinatario + ": " + mensaje);
+                                dataOutput.writeUTF("[Mensaje privado enviado a " + nombreDestinatario + "]: " + mensaje);
                                 hilo.mensajePrivado(nombreUsuario, mensaje, hilo);
                                 usuarioEncontrado = true;
                                 break;
@@ -80,6 +81,40 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                     /*if (!usuarioEncontrado) {
                         dataOutput.writeUTF("El usuario " + nombreDestinatario + " no se encuentra conectado.");
                     }*/
+                }
+
+                if(texto.startsWith("@mensajeadministracion:")){
+                    try {
+                        // Extraer la parte después de ":"
+                        String[] partes = texto.split(":", 2);
+                        String mensaje = partes[1];
+
+                        List<Grupo> listaGrupos = ServidorChat.getListaGrupos();
+                        List<String> gruposAdministracion = Arrays.asList("Medicos","Admision", "Pabellon", "Examenes", "Auxiliar");
+
+                        for (Grupo grupo : listaGrupos) {
+                            if (gruposAdministracion.contains(grupo.getNombreGrupo())) {
+                                for (HiloDeCliente miembro : grupo.getListaMiembros()) {
+                                    if(grupo.getNombreGrupo().equals("Medicos")){
+                                        try {
+                                            miembro.dataOutput.writeUTF("[Mensaje enviado a Administración]: " + mensaje);
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                    else{
+                                        try {
+                                            miembro.dataOutput.writeUTF("[Mensaje para administración]: " + mensaje);
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 if(texto.startsWith("@mensajegrupo:")){
@@ -105,7 +140,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                             if (grupo.getNombreGrupo().equals(nombreGrupo)) {
                                 for (HiloDeCliente miembro : grupo.getListaMiembros()) {
                                     try {
-                                        miembro.dataOutput.writeUTF("Mensaje del grupo " + nombreGrupo + ": " + mensaje);
+                                        miembro.dataOutput.writeUTF("[Mensaje del grupo " + nombreGrupo + "]: " + mensaje);
                                     } catch (Exception e) {
                                         e.printStackTrace();
                                     }
@@ -173,7 +208,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                                     }
                                 }
                             }
-                            dataOutput.writeUTF("Usuarios agregados con éxito.");
+                            dataOutput.writeUTF("[Usuarios agregados con éxito.]");
                         }
 
 
@@ -218,7 +253,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                                     break;
                                 } 
                                 if( j == lista.size() - 1){
-                                    dataOutput.writeUTF("El usuario " + usuarios[i] + " no se encuentra conectado.");
+                                    dataOutput.writeUTF("[El usuario " + usuarios[i] + " no se encuentra conectado.]");
                                     return;
                                 }
                             }
@@ -237,7 +272,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                             ServidorChat.agregarGrupo(grupo);
                         }
 
-                        dataOutput.writeUTF("Grupo creado con éxito.");
+                        dataOutput.writeUTF("[Grupo creado con éxito.]");
 
 
                     } catch (IOException e) {
@@ -276,7 +311,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
 
     private void mensajePrivado (String nombreDestinatario, String mensaje, HiloDeCliente hilo){    
         try{
-            hilo.dataOutput.writeUTF("Mensaje privado de " + nombreDestinatario + ": " + mensaje);
+            hilo.dataOutput.writeUTF("[Mensaje privado de " + nombreDestinatario + "]: " + mensaje);
         } catch (Exception e){
             e.printStackTrace();
         }

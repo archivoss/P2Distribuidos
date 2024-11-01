@@ -38,6 +38,10 @@ public class ControlCliente implements ActionListener, Runnable{
             String comando = evento.getActionCommand();
             String texto = panel.getTexto();
 
+            if(texto.equals("@mensajeadminitracion")){
+                dataOutput.writeUTF("/mensajeadministracion");
+                return;
+            }
             if(texto.equals("@mensajegrupo")){
                 dataOutput.writeUTF("/mensajegrupo");
                 return;
