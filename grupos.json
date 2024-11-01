@@ -1,0 +1,29 @@
+{
+    "grupos": [
+      {
+        "nombreGrupo": "Medicos",
+        "listaMiembros": [],
+        "mensajes": []
+      },
+      {
+        "nombreGrupo": "Admicion",
+        "listaMiembros": [],
+        "mensajes": []
+      },
+      {
+        "nombreGrupo": "Pabellon",
+        "listaMiembros": [],
+        "mensajes": []
+      },
+      {
+        "nombreGrupo": "Examenes",
+        "listaMiembros": [],
+        "mensajes": []
+      },
+      {
+        "nombreGrupo": "Auxiliar",
+        "listaMiembros": [],
+        "mensajes": []
+      }
+    ]
+  }
