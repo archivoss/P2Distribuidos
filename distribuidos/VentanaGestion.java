@@ -14,7 +14,7 @@ public class VentanaGestion extends JFrame {
 
     public VentanaGestion(List<Grupo> grupos) {
         setTitle("Gestión del Servidor de Chat");
-        setSize(400, 300);
+        setSize(500, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 

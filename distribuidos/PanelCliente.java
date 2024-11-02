@@ -3,6 +3,7 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionListener;
+import java.util.List;
 import java.awt.event.ActionEvent;
 import javax.swing.*;
 
@@ -30,7 +31,7 @@ public class PanelCliente extends JPanel {
         textAreaUsuarios = new JTextArea();
         textAreaUsuarios.setEditable(false);
         scrollUsuarios = new JScrollPane(textAreaUsuarios);
-        scrollUsuarios.setPreferredSize(new Dimension(200, 0)); // Ancho fijo de 150 px, altura flexible
+        scrollUsuarios.setPreferredSize(new Dimension(150, 0)); // Ancho fijo de 150 px, altura flexible
 
 
         JPanel panel = new JPanel(new BorderLayout());
@@ -80,5 +81,36 @@ public class PanelCliente extends JPanel {
     // Método adicional para agregar texto al área de usuarios
     public void addUsuarioTexto(String texto) {
         textAreaUsuarios.append(texto);
+    }
+
+    public void cambiartextAreaUsuarios(){
+        //textAreaUsuarios.append("texto");
+        // StringBuilder para construir el texto
+        StringBuilder texto = new StringBuilder();
+
+        // Obtener la lista de grupos
+        List<Grupo> grupos = ServidorChat.getListaGrupos();
+        // Recorrer los grupos
+        for (Grupo grupo : grupos) {
+            String nombreGrupo = grupo.getNombreGrupo();  // Asegúrate de que este método exista
+            texto.append(nombreGrupo).append(":\n");
+
+            // Obtener los usuarios del grupo (supongamos que tienes un método para esto)
+            List<String> usuariosDelGrupo = grupo.getNombresMiembros(); // Este método debe devolver la lista de usuarios
+
+            // Agregar los usuarios al texto
+            for (String usuario : usuariosDelGrupo) {
+                texto.append("    ").append(usuario).append("\n");
+            }
+            texto.append("\n"); // Espacio entre grupos
+        }
+        //System.out.println("resultado");
+        //System.out.println(texto);
+        if (texto.isEmpty()){
+        }
+        else{
+            textAreaUsuarios.setText("");
+            textAreaUsuarios.append(texto.toString());
+        }
     }
 }

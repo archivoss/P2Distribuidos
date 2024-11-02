@@ -40,7 +40,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
         try {
             while (true) {
                 String texto = dataInput.readUTF();
-                System.out.println("Mensaje recibido: " + texto);
+                System.out.println("Mensaje recibido en: " + texto);
                 
                 // Validación para evitar errores si el texto está vacío
                 if (texto == null || texto.isEmpty()) {

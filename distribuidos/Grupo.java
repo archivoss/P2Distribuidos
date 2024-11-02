@@ -35,6 +35,13 @@ public class Grupo {
     public List<HiloDeCliente> getListaMiembros() {
         return listaMiembros;
     }
-    
+    // Método para obtener los nombres de los miembros
+    public List<String> getNombresMiembros() {
+        List<String> nombres = new ArrayList<>();
+        for (HiloDeCliente miembro : listaMiembros) {
+            nombres.add(miembro.getNombreUsuario()); // Asegúrate de que getNombreUsuario() esté implementado en HiloDeCliente
+        }
+        return nombres;
+    }
     
 }
