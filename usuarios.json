@@ -1,0 +1,34 @@
+{
+    "usuarios": [
+      {
+        "nombreUsuario": "usuario1",
+        "rol": "Medicos",
+        "contrasena": "password1",
+        "conectado": false
+      },
+      {
+        "nombreUsuario": "usuario2",
+        "rol": "Admision",
+        "contrasena": "password2",
+        "conectado": false
+      },
+      {
+        "nombreUsuario": "usuario3",
+        "rol": "Pabellon",
+        "contrasena": "password3",
+        "conectado": false
+      },
+      {
+        "nombreUsuario": "usuario4",
+        "rol": "Examenes",
+        "contrasena": "password4",
+        "conectado": false
+      },
+      {
+        "nombreUsuario": "usuario5",
+        "rol": "Auxiliar",
+        "contrasena": "password5",
+        "conectado": false
+      }
+    ]
+  }

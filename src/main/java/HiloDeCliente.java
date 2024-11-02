@@ -19,13 +19,16 @@ public class HiloDeCliente implements Runnable, ListDataListener{
     private DataInputStream dataInput;
     private DataOutputStream dataOutput;
     private String rol;
+    private String contrasena;
     public String nombreUsuario;
+    
 
-    public HiloDeCliente(DefaultListModel mensajes, Socket socket, String nombreUsuario, String rol){
+    public HiloDeCliente(DefaultListModel mensajes, Socket socket, String nombreUsuario, String rol, String contrasena){
         this.mensajes = mensajes;
         this.socket = socket;
         this.nombreUsuario = nombreUsuario;
         this.rol = rol;
+        this.contrasena = contrasena;
 
         try{
             dataInput = new DataInputStream(socket.getInputStream());
@@ -140,7 +143,9 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                             if (grupo.getNombreGrupo().equals(nombreGrupo)) {
                                 for (HiloDeCliente miembro : grupo.getListaMiembros()) {
                                     try {
-                                        miembro.dataOutput.writeUTF("[Mensaje del grupo " + nombreGrupo + "]: " + mensaje);
+                                        miembro.dataOutput.writeUTF("[Mensaje del grupo " + nombreGrupo + " (" + nombreUsuario+ ")]: " + mensaje);
+                                        mensaje = nombreUsuario + ": " + mensaje;
+                                        grupo.setMensajes(mensaje);
                                     } catch (Exception e) {
                                         e.printStackTrace();
                                     }
@@ -319,6 +324,14 @@ public class HiloDeCliente implements Runnable, ListDataListener{
 
     public String getNombreUsuario(){
         return nombreUsuario;
+    }
+
+    public String getContrasena(){
+        return contrasena;
+    }
+
+    public void setContrasena(String contrasena){
+        this.contrasena = contrasena;
     }
 
     private void desconectar() {
