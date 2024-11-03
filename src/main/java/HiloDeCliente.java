@@ -54,12 +54,6 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                     List<HiloDeCliente> lista = ServidorChat.getListaHilos();
                     String[] partes = texto.split(":", 2);
 
-                    // Validación para evitar problemas si no se pudo dividir el texto correctamente
-                    if (partes.length < 2) {
-                        dataOutput.writeUTF("Formato de mensaje inválido.");
-                        continue;
-                    }
-
                     String nombreDestinatario = partes[0].substring(1); // Quitamos el '@'
                     String mensaje = partes[1];
 
@@ -155,6 +149,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                                         for(HiloDeCliente hilo : lista){
                                             if(hilo.getNombreUsuario().equals(miembro.getNombreUsuario())){
                                                 hilo.dataOutput.writeUTF("[Mensaje del grupo (" + nombreGrupo + ")]: " + mensaje);
+                                                grupo.setMensajes("[Mensaje del grupo (" + nombreGrupo + ")]: " + mensaje);
                                             }
                                         }
                                     } catch (Exception e) {
@@ -327,6 +322,8 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                                     for (HiloDeCliente hiloAux : lista) {
                                         if(hilo.getNombreUsuario().equals(hiloAux.getNombreUsuario())){
                                             hiloAux.dataOutput.writeUTF("[Mensaje del grupo (" + grupo.getNombreGrupo() + ")]: " + texto);
+                                            grupo.setMensajes("[Mensaje del grupo (" + grupo.getNombreGrupo() + ")]: " + texto);
+                                            System.out.println("aqui");
                                         }
                                     }
                                 }
@@ -351,6 +348,35 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                     String mensaje = texto.substring(12);
                     for (HiloDeCliente hilo : lista){
                         hilo.dataOutput.writeUTF("[MENSAJE DE EMERGENCIA]: " + mensaje);
+                    }
+                }
+                if (texto.startsWith("@historial:")) {
+                    List<HiloDeCliente> lista = ServidorChat.getListaHilos();
+                    List<Grupo> listaGrupos = ServidorChat.getListaGrupos();
+                
+                    // Separar el mensaje y capturar el nombre del grupo
+                    String nombreGrupo = texto.substring(11).trim(); // Comienza desde el índice 11 y elimina espacios en blanco
+                
+                    // Ver de qué grupo es miembro y enviar el historial de ese grupo al cliente
+                    for (Grupo grupo : listaGrupos) {
+                        if (grupo.getNombreGrupo().equals(nombreGrupo)) {
+                            for (HiloDeCliente miembro : grupo.getListaMiembros()) {
+                                if (miembro.getNombreUsuario().equals(nombreUsuario)) {
+                                    List<String> mensajes = grupo.getMensajes();
+                                    dataOutput.writeUTF("");
+                                    dataOutput.writeUTF("-----------------HISTORIAL DE MENSAJES GRUPO MÉDICOS------------------");
+                                    dataOutput.writeUTF("");
+                                    for (int i = 0; i < mensajes.size(); i += 2) {
+                                        String mensaje = mensajes.get(i);
+                                        
+                                        dataOutput.writeUTF(mensaje);
+                                    }
+                                    dataOutput.writeUTF("");
+                                    dataOutput.writeUTF("----------------------------------------------------------------------------------------");
+                                    dataOutput.writeUTF("");
+                                }
+                            }
+                        }
                     }
                 }
             }

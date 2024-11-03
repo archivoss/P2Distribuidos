@@ -37,16 +37,29 @@ public class ControlCliente implements ActionListener, Runnable{
         }
     }
     @Override
-    public void actionPerformed(ActionEvent evento){
-        try{
+    public void actionPerformed(ActionEvent evento) {
+        try {
             String comando = evento.getActionCommand();
             String texto = panel.getTexto();
 
-            if(rol.equals("Admin")){
+            if(texto.equals("@historial:")){
+                dataOutput.writeUTF("@historial:" + texto);
+                return;
+            } 
+    
+            if (texto.equals("@clear")) {
+                panel.limpiarChat();
+                return;
+            }
+    
+            // Detectar y formatear texto en negrita
+            String formattedText = texto.replaceAll("\\*(.*?)\\*", "<b>$1</b>");
+    
+            if (rol.equals("Admin")) {
                 dataOutput.writeUTF("@emergencia:" + texto);
                 return;
             }
-
+    
             switch (comando) {
                 case "Ver Usuarios":
                     dataOutput.writeUTF("/usuarios");
@@ -70,11 +83,11 @@ public class ControlCliente implements ActionListener, Runnable{
                     if (texto.equals("@desconectar")) {
                         dataOutput.writeUTF("/desconectar");
                     } else {
-                        dataOutput.writeUTF(texto);
+                        dataOutput.writeUTF(formattedText);
                     }
                     break;
             }
-        } catch (Exception excepcion){
+        } catch (Exception excepcion) {
             excepcion.printStackTrace();
         }
     }

@@ -75,7 +75,9 @@ public class PanelCliente extends JPanel{
        
     }
 
-    
+    public void limpiarChat() {
+        textArea.setText("");
+    }
 
     public void addActionListener(ActionListener accion){
         textField.addActionListener(accion);
