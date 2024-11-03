@@ -2,6 +2,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -21,6 +23,8 @@ public class HiloDeCliente implements Runnable, ListDataListener{
     private String rol;
     private String contrasena;
     public String nombreUsuario;
+    public LocalDateTime horaConexion;
+
 
     public HiloDeCliente(DefaultListModel mensajes, Socket socket, String nombreUsuario, String rol, String contrasena){
         this.mensajes = mensajes;
@@ -28,6 +32,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
         this.nombreUsuario = nombreUsuario;
         this.rol = rol;
         this.contrasena = contrasena;
+        this.horaConexion = LocalDateTime.now();
 
         try{
             dataInput = new DataInputStream(socket.getInputStream());
@@ -369,7 +374,11 @@ public class HiloDeCliente implements Runnable, ListDataListener{
             excepcion.printStackTrace();
         }
     }
-
+    
+    // Método para calcular el tiempo conectado
+    public Duration tiempoConectado() {
+        return Duration.between(horaConexion, LocalDateTime.now());
+    }
 
     @Override
     public void intervalRemoved(ListDataEvent e) {

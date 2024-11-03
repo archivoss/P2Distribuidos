@@ -1,6 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -121,12 +122,23 @@ public class VentanaGestion extends JFrame {
 
     // Método para mostrar una nueva ventana con el nombre del usuario seleccionado
     private void mostrarVentanaNueva(String usuarioSeleccionado) {
+        Long tiempoConectado=(long) 1000;
+        List<HiloDeCliente> usuarios = ServidorChat.getListaHilos();
+        for (HiloDeCliente usuario : usuarios){
+            System.out.println("hello");
+            System.out.println(usuario.nombreUsuario +"  "+usuarioSeleccionado);
+            if(usuarioSeleccionado.contains(usuario.nombreUsuario)){
+                tiempoConectado=usuario.tiempoConectado().toSeconds();
+            }
+        }
         JDialog nuevaVentana = new JDialog(this, "Detalles del Usuario", true);
         nuevaVentana.setSize(200, 150);
         nuevaVentana.setLayout(new FlowLayout());
 
         JLabel labelNombreUsuario = new JLabel("Usuario: " + usuarioSeleccionado);
+        JLabel tiempo = new JLabel("Tiempo Online: "+tiempoConectado +" segundos");
         nuevaVentana.add(labelNombreUsuario);
+        nuevaVentana.add(tiempo);
 
         nuevaVentana.setLocationRelativeTo(this);
         nuevaVentana.setVisible(true);
