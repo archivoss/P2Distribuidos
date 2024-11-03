@@ -59,6 +59,7 @@ public class PanelCliente extends JPanel {
         btnMensajeAdministracion.setBackground(botonesColor);
         btnCrearGrupo.setBackground(botonesColor);
         btnMensajeGrupo.setBackground(botonesColor);
+        btnTodos.setBackground(botonesColor);
         
         boton.setForeground(Color.black);
         btnLimpiarChat.setForeground(Color.black); // Color del texto del nuevo botón
@@ -66,6 +67,7 @@ public class PanelCliente extends JPanel {
         btnMensajeAdministracion.setForeground(Color.black);
         btnCrearGrupo.setForeground(Color.black);
         btnMensajeGrupo.setForeground(Color.black);
+        btnTodos.setForeground(Color.black);
 
         panel.add(textField, BorderLayout.NORTH);
         panel.add(boton, BorderLayout.CENTER);
@@ -91,21 +93,9 @@ public class PanelCliente extends JPanel {
             contenedor.add(scroll, BorderLayout.CENTER);
             contenedor.add(panel, BorderLayout.SOUTH);
             contenedor.add(panelBotones, BorderLayout.NORTH);
-    
-            btnUsuarios.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    
-                }
-            });
         }
-        panelBotones.add(btnMensajeAdministracion);
-        panelBotones.add(btnCrearGrupo);
-        panelBotones.add(btnAgregarMiembros);
-        
-        contenedor.add(scroll, BorderLayout.CENTER);
-        contenedor.add(panel, BorderLayout.SOUTH);
-        contenedor.add(panelBotones, BorderLayout.NORTH);
+
+        contenedor.add(scrollUsuarios, BorderLayout.EAST);
 
         // Agregar acción para el botón "Limpiar Chat"
         btnLimpiarChat.addActionListener(new ActionListener() {
@@ -150,10 +140,10 @@ public class PanelCliente extends JPanel {
         List<Grupo> grupos = ServidorChat.getListaGrupos();
         for (Grupo grupo : grupos) {
             String nombreGrupo = grupo.getNombreGrupo();
-            //List<String> usuariosDelGrupo = grupo.getNombresMiembros();
             List<HiloDeCliente> listaUsuarios = grupo.getListaMiembros();
             for (HiloDeCliente usuario : listaUsuarios) {
                 if (rol.equals("Medicos") && usuario.getRol().equals("Auxiliar")) {
+                    // No hacer nada si el rol es Medicos y el usuario es Auxiliar
                 } else {
                     texto.append(nombreGrupo).append(":\n");
                     texto.append("   ").append(usuario.nombreUsuario).append("\n");
@@ -161,10 +151,8 @@ public class PanelCliente extends JPanel {
             }
             texto.append("\n");
         }
-        if (texto.isEmpty()) {
-        } else {
-            textAreaUsuarios.setText("");
-            textAreaUsuarios.append(texto.toString());
+        if (texto.length() > 0) {
+            textAreaUsuarios.setText(texto.toString());
         }
     }
 }

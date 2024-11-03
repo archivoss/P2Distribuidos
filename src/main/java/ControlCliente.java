@@ -61,11 +61,6 @@ public class ControlCliente implements ActionListener, Runnable{
             if(texto.equals("@historial:")){
                 dataOutput.writeUTF("@historial:" + texto);
                 return;
-            } 
-    
-            if (texto.equals("@clear")) {
-                panel.limpiarChat();
-                return;
             }
     
             // Detectar y formatear texto en negrita

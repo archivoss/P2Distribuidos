@@ -322,7 +322,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                 
                 //MENSAJE GENERAL
                 if(texto.charAt(0) != '@' && texto.charAt(0) != '/'){ // Si no es un mensaje privado, lo enviamos a todos los clientes
-                    mensajes.addElement(nombreUsuario + ": " + texto);
+                    
                     this.listaMensajes.add("general");
 
                     //enviamos un mensaje solamente al grupo donde pertenece el usuario
@@ -334,9 +334,8 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                                 for (HiloDeCliente hilo : grupo.getListaMiembros()) {
                                     for (HiloDeCliente hiloAux : lista) {
                                         if(hilo.getNombreUsuario().equals(hiloAux.getNombreUsuario())){
-                                            hiloAux.dataOutput.writeUTF("[Mensaje del grupo (" + grupo.getNombreGrupo() + ")]: " + texto);
-                                            grupo.setMensajes("[Mensaje del grupo (" + grupo.getNombreGrupo() + ")]: " + texto);
-                                            System.out.println("aqui");
+                                            hiloAux.dataOutput.writeUTF("[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + hilo.getNombreUsuario() + ")]: " + texto);
+                                            grupo.setMensajes("[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + hilo.getNombreUsuario() + ")]: " + texto);
                                         }
                                     }
                                 }
