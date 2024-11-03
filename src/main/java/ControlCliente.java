@@ -15,9 +15,13 @@ public class ControlCliente implements ActionListener, Runnable{
     private Thread hilo;
     private Socket socket;
     private JFrame ventana;
+    private String nombreUsuario;
+    private String rol;
 
-    public ControlCliente(Socket socket){
+    public ControlCliente(Socket socket, String nombreUsuario, String rol){
         this.socket = socket;
+        this.nombreUsuario = nombreUsuario;
+        this.rol = rol;
 
         //this.panel = panel;
         try{
@@ -96,9 +100,9 @@ public class ControlCliente implements ActionListener, Runnable{
         }
     }
     private void creaYVisualizaVentana() {
-        ventana = new JFrame("Cliente Chat");
+        ventana = new JFrame("Chat de " + nombreUsuario);
         ventana.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        panel = new PanelCliente(ventana.getContentPane());
+        panel = new PanelCliente(ventana.getContentPane(), rol);
         panel.addActionListener(this);
         ventana.setSize(600, 400);
         ventana.setVisible(true);

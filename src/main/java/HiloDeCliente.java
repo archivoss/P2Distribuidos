@@ -93,7 +93,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
 
                         List<HiloDeCliente> lista = ServidorChat.getListaHilos();
                         List<Grupo> listaGrupos = ServidorChat.getListaGrupos();
-                        List<String> gruposAdministracion = Arrays.asList("Medicos","Admision", "Pabellon", "Examenes", "Auxiliar");
+                        List<String> gruposAdministracion = Arrays.asList("Medicos","Admision", "Pabellon", "Examenes");
 
                         for (Grupo grupo : listaGrupos) {
                             if (gruposAdministracion.contains(grupo.getNombreGrupo())) {

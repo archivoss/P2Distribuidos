@@ -20,7 +20,7 @@ public class PanelCliente extends JPanel{
     private JButton btnAgregarMiembros;
     private JButton btnMensajeAdministracion;
 
-    public PanelCliente(Container contenedor){
+    public PanelCliente(Container contenedor, String rol){
         contenedor.setLayout(new BorderLayout());
         textArea = new JTextArea();
         scroll = new JScrollPane(textArea);
@@ -29,21 +29,24 @@ public class PanelCliente extends JPanel{
         textField = new JTextField(50);
         boton = new JButton("Enviar");
         btnUsuarios = new JButton("Ver Usuarios");
-        btnCrearGrupo = new JButton("Crear Grupo");
-        btnMensajeGrupo = new JButton("Mensaje Grupo");
         btnAgregarMiembros = new JButton("Agregar Miembros");
         btnMensajeAdministracion = new JButton("Mensaje Administración");
+        btnCrearGrupo = new JButton("Crear Grupo");
+        btnMensajeGrupo = new JButton("Mensaje Grupo");
+        
 
         panel.add(textField, BorderLayout.NORTH);
         panel.add(boton, BorderLayout.SOUTH);
         panel.add(btnUsuarios, BorderLayout.WEST);
 
         JPanel panelBotones = new JPanel();
-        panelBotones.add(btnCrearGrupo);
-        panelBotones.add(btnMensajeGrupo);
-        panelBotones.add(btnAgregarMiembros);
+        if(!rol.equals("Medicos")){
+            panelBotones.add(btnMensajeGrupo);
+        }
         panelBotones.add(btnMensajeAdministracion);
-
+        panelBotones.add(btnCrearGrupo);
+        panelBotones.add(btnAgregarMiembros);
+        
         contenedor.add(scroll, BorderLayout.CENTER);
         contenedor.add(panel, BorderLayout.SOUTH);
         contenedor.add(panelBotones, BorderLayout.NORTH);

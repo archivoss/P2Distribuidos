@@ -58,7 +58,7 @@ public class VentanaGestion extends JFrame {
                 if(usuario.getNombreUsuario().equals(nombreUsuario) && usuario.getContrasena().equals(contrasena)){
                     System.out.println("Usuario ya existe");
                     getDatos();
-                    new ClienteChat();
+                    new ClienteChat(usuario.getNombreUsuario(), usuario.getRol());
                     return;
                 }
             }
