@@ -10,8 +10,11 @@ import java.awt.event.*;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class VentanaGestion extends JFrame {
     private DefaultListModel<String> modeloUsuarios;
@@ -65,6 +68,19 @@ public class VentanaGestion extends JFrame {
             if (!e.getValueIsAdjusting()) {
                 String grupoSeleccionado = listaGrupos.getSelectedValue();
                 resaltarMiembros(grupoSeleccionado);
+            }
+        });
+
+        // Evento al hacer doble clic en un usuario
+        listaUsuarios.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {  // Doble clic
+                    String usuarioSeleccionado = listaUsuarios.getSelectedValue();
+                    if (usuarioSeleccionado != null) {
+                        mostrarVentanaNueva(usuarioSeleccionado);
+                    }
+                }
             }
         });
 
@@ -144,7 +160,7 @@ public class VentanaGestion extends JFrame {
     public void actualizarUsuarios(List<HiloDeCliente> usuarios, List<Grupo> grupos) {
         modeloUsuarios.clear();
         modeloGrupos.clear();
-        listaDeGrupos = grupos;  // Actualizamos la lista de grupos
+        listaDeGrupos = grupos;
 
         for (HiloDeCliente usuario : usuarios) {
             modeloUsuarios.addElement(usuario.getNombreUsuario() + " (" + usuario.getRol() + ")");
@@ -179,32 +195,84 @@ public class VentanaGestion extends JFrame {
 
     // Método para resaltar los miembros del grupo seleccionado
     private void resaltarMiembros(String grupoSeleccionado) {
-    // Limpiamos las selecciones anteriores
-    listaUsuarios.clearSelection();
-
-    // Buscamos el grupo seleccionado
-    for (Grupo grupo : listaDeGrupos) {
-        if (grupo.getNombreGrupo().equals(grupoSeleccionado)) {
-            // Preparamos los índices de los usuarios que deben ser seleccionados
-            List<Integer> indicesSeleccionados = new ArrayList<>();
-            
-            // Iteramos sobre los usuarios en la lista para ver si están en el grupo
-            for (int i = 0; i < modeloUsuarios.getSize(); i++) {
-                String nombreUsuario = modeloUsuarios.getElementAt(i);
-                for (HiloDeCliente usuario : grupo.getListaMiembros()) {
-                    
-                    if (usuario.getNombreUsuario().equals(nombreUsuario)) {
-                        indicesSeleccionados.add(i);  // Guardamos el índice
+        listaUsuarios.clearSelection();
+        for (Grupo grupo : listaDeGrupos) {
+            if (grupo.getNombreGrupo().equals(grupoSeleccionado)) {
+                List<Integer> indicesSeleccionados = new ArrayList<>();
+                for (int i = 0; i < modeloUsuarios.getSize(); i++) {
+                    String nombreUsuario = modeloUsuarios.getElementAt(i);
+                    for (HiloDeCliente usuario : grupo.getListaMiembros()) {
+                        if (usuario.getNombreUsuario().equals(nombreUsuario)) {
+                            indicesSeleccionados.add(i);
+                        }
                     }
                 }
+                int[] indicesArray = indicesSeleccionados.stream().mapToInt(i -> i).toArray();
+                listaUsuarios.setSelectedIndices(indicesArray);
+                return;
             }
-
-            // Seleccionamos los índices correspondientes
-            int[] indicesArray = indicesSeleccionados.stream().mapToInt(i -> i).toArray();
-            listaUsuarios.setSelectedIndices(indicesArray);
-            return;  // Salimos una vez terminado
         }
     }
-}
 
+    // Método para mostrar una nueva ventana con el nombre del usuario seleccionado
+    private void mostrarVentanaNueva(String usuarioSeleccionado) {
+        Long tiempoConectado = (long) 1000;
+        List<HiloDeCliente> usuarios = ServidorChat.getListaHilos();
+        Map<String, Integer> conteoMensajes = new HashMap<>(); // Para almacenar el conteo de mensajes
+        
+        for (HiloDeCliente usuario : usuarios) {
+            System.out.println("hello");
+            System.out.println(usuario.nombreUsuario + "  " + usuarioSeleccionado);
+            if (usuarioSeleccionado.contains(usuario.nombreUsuario)) {
+                tiempoConectado = usuario.tiempoConectado().toSeconds();
+                ArrayList<String> listaMensajes = usuario.getlistaMensajes();
+                conteoMensajes = contarMensajes(listaMensajes); // Obtener el conteo de mensajes
+            }
+        }
+        
+        // Crear la ventana nueva
+        JDialog nuevaVentana = new JDialog(this, "Detalles del Usuario", true);
+        nuevaVentana.setSize(300, 200); // Ajustar el tamaño si es necesario
+        nuevaVentana.setLayout(new FlowLayout());
+        
+        JLabel labelNombreUsuario = new JLabel("Usuario: " + usuarioSeleccionado);
+        JLabel tiempo = new JLabel("Tiempo Online: " + tiempoConectado + " segundos");
+        nuevaVentana.add(labelNombreUsuario);
+        nuevaVentana.add(tiempo);
+        
+        // Crear un JTextArea para mostrar el conteo de mensajes
+        JTextArea textoMensajes = new JTextArea(5, 20); // Puedes ajustar el tamaño
+        textoMensajes.setEditable(false); // Hacerlo no editable
+        
+        // Construir el texto para el JTextArea
+        StringBuilder mensajesTexto = new StringBuilder("Destinatarios de Mensajes:\n");
+        for (Map.Entry<String, Integer> entry : conteoMensajes.entrySet()) {
+            mensajesTexto.append(entry.getKey()).append(": ").append(entry.getValue()).append(" mensajes").append("\n");
+        }
+        
+        // Establecer el texto en el JTextArea
+        textoMensajes.setText(mensajesTexto.toString());
+        nuevaVentana.add(new JScrollPane(textoMensajes)); // Agregar el JTextArea a la ventana
+        
+        nuevaVentana.setLocationRelativeTo(this);
+        nuevaVentana.setVisible(true);
+        
+    }
+
+    public static Map<String, Integer> contarMensajes(ArrayList<String> listaMensajes) {
+        Map<String, Integer> conteo = new HashMap<>();
+
+        // Recorrer cada mensaje en la lista
+        for (String mensaje : listaMensajes) {
+            // Si el mensaje ya está en el mapa, incrementar el contador
+            if (conteo.containsKey(mensaje)) {
+                conteo.put(mensaje, conteo.get(mensaje) + 1);
+            } else {
+                // Si no está, agregarlo con un conteo inicial de 1
+                conteo.put(mensaje, 1);
+            }
+        }
+
+        return conteo;
+    }
 }

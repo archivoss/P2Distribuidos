@@ -16,6 +16,7 @@ public class ControlCliente implements ActionListener, Runnable{
     private Socket socket;
     private JFrame ventana;
     private String nombreUsuario;
+    private Timer timer;
     private String rol;
 
     public ControlCliente(Socket socket, String nombreUsuario, String rol){
@@ -32,9 +33,24 @@ public class ControlCliente implements ActionListener, Runnable{
             
             hilo = new Thread(this);
             hilo.start();
+            iniciarTimer();
         } catch (Exception e){
             e.printStackTrace();
         }
+    }
+    private void iniciarTimer(){
+        timer=new Timer(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                generarInfoUser();
+            }
+        });
+        timer.start();
+    }
+
+    public void generarInfoUser(){
+        this.panel.cambiartextAreaUsuarios(this.rol);
+        
     }
     @Override
     public void actionPerformed(ActionEvent evento) {
@@ -143,6 +159,7 @@ public class ControlCliente implements ActionListener, Runnable{
             socket.close();  // Cierra el socket
             hilo.interrupt();  // Detiene el hilo
             ventana.dispose();  // Cierra la ventana
+            timer.stop();
             System.out.println("Sesión cerrada correctamente.");
         } catch (Exception e) {
             e.printStackTrace();
