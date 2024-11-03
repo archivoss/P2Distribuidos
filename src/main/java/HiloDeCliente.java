@@ -317,7 +317,41 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                 }
                 if(texto.charAt(0) != '@' && texto.charAt(0) != '/'){ // Si no es un mensaje privado, lo enviamos a todos los clientes
 
-                    mensajes.addElement(nombreUsuario + ": " + texto);
+                    //enviamos un mensaje solamente al grupo donde pertenece el usuario
+                    List<Grupo> listaGrupos = ServidorChat.getListaGrupos();
+                    List<HiloDeCliente> lista = ServidorChat.getListaHilos();
+                    for (Grupo grupo : listaGrupos) {
+                        for (HiloDeCliente miembro : grupo.getListaMiembros()) {
+                            if(miembro.getNombreUsuario().equals(nombreUsuario) && !grupo.getNombreGrupo().equals("Auxiliar")){
+                                for (HiloDeCliente hilo : grupo.getListaMiembros()) {
+                                    for (HiloDeCliente hiloAux : lista) {
+                                        if(hilo.getNombreUsuario().equals(hiloAux.getNombreUsuario())){
+                                            hiloAux.dataOutput.writeUTF("[Mensaje del grupo (" + grupo.getNombreGrupo() + ")]: " + texto);
+                                        }
+                                    }
+                                }
+                            }
+                            if(miembro.getNombreUsuario().equals(nombreUsuario) && grupo.getNombreGrupo().equals("Auxiliar")){
+                                for (HiloDeCliente hilo : lista) {
+                                    hilo.dataOutput.writeUTF("[Mensaje desde el grupo (Auxiliar)]: " + texto);
+                                }
+                            }
+                        }
+                    }
+                }
+                if(texto.startsWith("@todos:")){
+                    List<HiloDeCliente> lista = ServidorChat.getListaHilos();
+                    String mensaje = texto.substring(7);
+                    for (HiloDeCliente hilo : lista){
+                        hilo.dataOutput.writeUTF("[Mensaje para todos]: " + mensaje);
+                    }
+                }
+                if(texto.startsWith("@emergencia:")){
+                    List<HiloDeCliente> lista = ServidorChat.getListaHilos();
+                    String mensaje = texto.substring(12);
+                    for (HiloDeCliente hilo : lista){
+                        hilo.dataOutput.writeUTF("[MENSAJE DE EMERGENCIA]: " + mensaje);
+                    }
                 }
             }
         } catch (Exception e) {

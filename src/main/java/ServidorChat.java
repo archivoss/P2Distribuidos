@@ -35,7 +35,7 @@ public class ServidorChat {
             // Leer el archivo JSON y crear los grupos
             leerGruposDesdeJson("grupos.json");
             leerUsuariosDesdeJson("usuarios.json");
-            ventanaGestion = new VentanaGestion(listaGrupos, listaUsuariosTotal);
+            ventanaGestion = new VentanaGestion(listaGrupos, listaUsuariosTotal, listaHilos);
             ventanaGestion.actualizarUsuarios(listaHilos, listaGrupos);
             ServerSocket socketServidor = new ServerSocket(5000);
             while (true) {
