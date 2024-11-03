@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -347,10 +348,13 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                             if(miembro.getNombreUsuario().equals(nombreUsuario) && !grupo.getNombreGrupo().equals("Auxiliar")){
                                 for (HiloDeCliente hilo : grupo.getListaMiembros()) {
                                     for (HiloDeCliente hiloAux : lista) {
+                                        int contador = 0;
                                         if(hilo.getNombreUsuario().equals(hiloAux.getNombreUsuario())){
-                                            dataOutput.writeUTF("[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + hilo.getNombreUsuario() + ")]: " + texto);
-                                            hiloAux.dataOutput.writeUTF("[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + hilo.getNombreUsuario() + ")]: " + texto);
-                                            grupo.setMensajes("[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + hilo.getNombreUsuario() + ")]: " + texto);
+                                            hiloAux.dataOutput.writeUTF("[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + nombreUsuario + ")]: " + texto);
+                                            if(contador == 0){
+                                                grupo.setMensajes("[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + nombreUsuario + ")]: " + texto);
+                                                contador++;
+                                            }
                                         }
                                     }
                                 }
@@ -361,6 +365,8 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                                 }
                             }
                         }
+
+
                     }
                 }
                 if(texto.startsWith("@todos:")){
@@ -417,6 +423,8 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                                 }
                             }
                         }
+
+                        todosLosMensajes = eliminarDuplicados(todosLosMensajes);
 
                         for (HiloDeCliente hilo : lista) {
                             if (hilo.getNombreUsuario().equals(nombreUsuario)) {
@@ -622,7 +630,10 @@ public class HiloDeCliente implements Runnable, ListDataListener{
         }
     }
     
-    
+    private List<String> eliminarDuplicados(List<String> mensajes) {
+        return new ArrayList<>(new LinkedHashSet<>(mensajes));
+    }
+
 
     @Override
     public void intervalAdded(ListDataEvent e){
