@@ -13,18 +13,11 @@ public class ClienteChat{
 
     public static void main(String[] args){
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Ingrese la cantidad de clientes que desea abrir: ");
-        int numClientes = scanner.nextInt();
-        
-        for(int i = 0 ; i < numClientes ; i++){
-            new ClienteChat();
-        }
     }
-    public ClienteChat(){
+    public ClienteChat(String nombreUsuario, String rol){
         try{
             socket = new Socket("localhost", 5000);
-            ControlCliente control = new ControlCliente(socket);
+            ControlCliente control = new ControlCliente(socket, nombreUsuario, rol);
         } catch (Exception e){
             e.printStackTrace();
         }

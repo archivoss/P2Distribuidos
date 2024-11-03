@@ -11,14 +11,18 @@ public class VentanaGestion extends JFrame {
     private JList<String> listaGrupos;
     private JButton btnAgregarUsuario;
     private List<Grupo> listaDeGrupos;
+    private List<HiloDeCliente> listaUsuariosTotal;
+    private String nombreUsuario;
+    private String contrasena;
 
-    public VentanaGestion(List<Grupo> grupos) {
+    public VentanaGestion(List<Grupo> grupos, List<HiloDeCliente> usuariosTotal) {
         setTitle("Gestión del Servidor de Chat");
         setSize(400, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
         listaDeGrupos = grupos;
+        listaUsuariosTotal = usuariosTotal;
 
         // Modelo y lista para mostrar los usuarios conectados
         modeloUsuarios = new DefaultListModel<>();
@@ -46,10 +50,26 @@ public class VentanaGestion extends JFrame {
 
         btnAgregarUsuario.addActionListener(e -> {
             // Lógica para agregar un usuario
-            new ClienteChat();
+            nombreUsuario = JOptionPane.showInputDialog("Ingrese el nombre del usuario");
+            contrasena = JOptionPane.showInputDialog("Ingrese la contraseña del usuario");
+
+            for(HiloDeCliente usuario : listaUsuariosTotal){
+                System.out.println(usuario.getNombreUsuario());
+                if(usuario.getNombreUsuario().equals(nombreUsuario) && usuario.getContrasena().equals(contrasena)){
+                    System.out.println("Usuario ya existe");
+                    getDatos();
+                    new ClienteChat(usuario.getNombreUsuario(), usuario.getRol());
+                    return;
+                }
+            }
         });
 
         setVisible(true);
+    }
+
+    public String[] getDatos(){
+        String [] datos = {nombreUsuario, contrasena};
+        return datos;
     }
 
     // Método para actualizar las listas

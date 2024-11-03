@@ -19,13 +19,15 @@ public class HiloDeCliente implements Runnable, ListDataListener{
     private DataInputStream dataInput;
     private DataOutputStream dataOutput;
     private String rol;
+    private String contrasena;
     public String nombreUsuario;
 
-    public HiloDeCliente(DefaultListModel mensajes, Socket socket, String nombreUsuario, String rol){
+    public HiloDeCliente(DefaultListModel mensajes, Socket socket, String nombreUsuario, String rol, String contrasena){
         this.mensajes = mensajes;
         this.socket = socket;
         this.nombreUsuario = nombreUsuario;
         this.rol = rol;
+        this.contrasena = contrasena;
 
         try{
             dataInput = new DataInputStream(socket.getInputStream());
@@ -89,24 +91,34 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                         String[] partes = texto.split(":", 2);
                         String mensaje = partes[1];
 
+                        List<HiloDeCliente> lista = ServidorChat.getListaHilos();
                         List<Grupo> listaGrupos = ServidorChat.getListaGrupos();
-                        List<String> gruposAdministracion = Arrays.asList("Medicos","Admision", "Pabellon", "Examenes", "Auxiliar");
+                        List<String> gruposAdministracion = Arrays.asList("Medicos","Admision", "Pabellon", "Examenes");
 
                         for (Grupo grupo : listaGrupos) {
                             if (gruposAdministracion.contains(grupo.getNombreGrupo())) {
                                 for (HiloDeCliente miembro : grupo.getListaMiembros()) {
                                     if(grupo.getNombreGrupo().equals("Medicos")){
-                                        try {
-                                            miembro.dataOutput.writeUTF("[Mensaje enviado a Administración]: " + mensaje);
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
+                                        for(HiloDeCliente hilo : lista){
+                                            if(hilo.getNombreUsuario().equals(miembro.getNombreUsuario())){
+                                                try {
+                                                    hilo.dataOutput.writeUTF("[Mensaje enviado a Administración]: " + mensaje);
+                                                } catch (Exception e) {
+                                                    e.printStackTrace();
+                                                }
+                                            }
                                         }
+                                        
                                     }
                                     else{
-                                        try {
-                                            miembro.dataOutput.writeUTF("[Mensaje para administración]: " + mensaje);
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
+                                        for(HiloDeCliente hilo : lista){
+                                            if(hilo.getNombreUsuario().equals(miembro.getNombreUsuario())){
+                                                try {
+                                                    hilo.dataOutput.writeUTF("[Mensaje grupo (ADMINISTRACIÓN)]: " + mensaje);
+                                                } catch (Exception e) {
+                                                    e.printStackTrace();
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -140,7 +152,11 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                             if (grupo.getNombreGrupo().equals(nombreGrupo)) {
                                 for (HiloDeCliente miembro : grupo.getListaMiembros()) {
                                     try {
-                                        miembro.dataOutput.writeUTF("[Mensaje del grupo " + nombreGrupo + "]: " + mensaje);
+                                        for(HiloDeCliente hilo : lista){
+                                            if(hilo.getNombreUsuario().equals(miembro.getNombreUsuario())){
+                                                hilo.dataOutput.writeUTF("[Mensaje del grupo (" + nombreGrupo + ")]: " + mensaje);
+                                            }
+                                        }
                                     } catch (Exception e) {
                                         e.printStackTrace();
                                     }
@@ -148,6 +164,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                                 break;
                             }
                         }
+                        dataOutput.writeUTF("[Mensaje enviado al grupo (" + nombreGrupo + ")]: " + mensaje);
                     } catch (IOException e) {
                         System.err.println("Error al enviar mensaje de confirmación: " + e.getMessage());
                     } catch (Exception e) {
@@ -337,6 +354,10 @@ public class HiloDeCliente implements Runnable, ListDataListener{
 
     public void setRol(String rol){
         this.rol = rol;
+    }
+
+    public String getContrasena(){
+        return contrasena;
     }
 
     @Override

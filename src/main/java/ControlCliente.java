@@ -15,9 +15,13 @@ public class ControlCliente implements ActionListener, Runnable{
     private Thread hilo;
     private Socket socket;
     private JFrame ventana;
+    private String nombreUsuario;
+    private String rol;
 
-    public ControlCliente(Socket socket){
+    public ControlCliente(Socket socket, String nombreUsuario, String rol){
         this.socket = socket;
+        this.nombreUsuario = nombreUsuario;
+        this.rol = rol;
 
         //this.panel = panel;
         try{
@@ -38,32 +42,30 @@ public class ControlCliente implements ActionListener, Runnable{
             String comando = evento.getActionCommand();
             String texto = panel.getTexto();
 
-            if(texto.equals("@mensajeadminitracion")){
-                dataOutput.writeUTF("/mensajeadministracion");
-                return;
+            switch (comando) {
+                case "Ver Usuarios":
+                    dataOutput.writeUTF("/usuarios");
+                    break;
+                case "Crear Grupo":
+                    dataOutput.writeUTF("@creargrupo:" + texto);
+                    break;
+                case "Mensaje Grupo":
+                    dataOutput.writeUTF("@mensajegrupo:" + texto);
+                    break;
+                case "Agregar Miembros":
+                    dataOutput.writeUTF("@agregarmiembros:" + texto);
+                    break;
+                case "Mensaje Administración":
+                    dataOutput.writeUTF("@mensajeadministracion:" + texto);
+                    break;
+                default:
+                    if (texto.equals("@desconectar")) {
+                        dataOutput.writeUTF("/desconectar");
+                    } else {
+                        dataOutput.writeUTF(texto);
+                    }
+                    break;
             }
-            if(texto.equals("@mensajegrupo")){
-                dataOutput.writeUTF("/mensajegrupo");
-                return;
-            }
-            if(texto.equals("@agregarmiembros")){
-                dataOutput.writeUTF("/agregarmiembros");
-                return;
-            }
-            
-            if(texto.equals("@creargrupo")){
-                dataOutput.writeUTF("/creargrupo");
-                return;
-            }
-            if(texto.equals("@desconectar")){
-                dataOutput.writeUTF("/desconectar");
-                return;
-            }else {
-                dataOutput.writeUTF(texto);
-            }
-            if(comando.equals("Ver Usuarios")){
-                dataOutput.writeUTF("/usuarios");
-            } 
         } catch (Exception excepcion){
             excepcion.printStackTrace();
         }
@@ -98,9 +100,9 @@ public class ControlCliente implements ActionListener, Runnable{
         }
     }
     private void creaYVisualizaVentana() {
-        ventana = new JFrame("Cliente Chat");
+        ventana = new JFrame("Chat de " + nombreUsuario);
         ventana.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        panel = new PanelCliente(ventana.getContentPane());
+        panel = new PanelCliente(ventana.getContentPane(), rol);
         panel.addActionListener(this);
         ventana.setSize(600, 400);
         ventana.setVisible(true);
