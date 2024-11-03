@@ -3,7 +3,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class VentanaGestion extends JFrame {
     private DefaultListModel<String> modeloUsuarios;
@@ -122,25 +124,63 @@ public class VentanaGestion extends JFrame {
 
     // Método para mostrar una nueva ventana con el nombre del usuario seleccionado
     private void mostrarVentanaNueva(String usuarioSeleccionado) {
-        Long tiempoConectado=(long) 1000;
+        Long tiempoConectado = (long) 1000;
         List<HiloDeCliente> usuarios = ServidorChat.getListaHilos();
-        for (HiloDeCliente usuario : usuarios){
+        Map<String, Integer> conteoMensajes = new HashMap<>(); // Para almacenar el conteo de mensajes
+        
+        for (HiloDeCliente usuario : usuarios) {
             System.out.println("hello");
-            System.out.println(usuario.nombreUsuario +"  "+usuarioSeleccionado);
-            if(usuarioSeleccionado.contains(usuario.nombreUsuario)){
-                tiempoConectado=usuario.tiempoConectado().toSeconds();
+            System.out.println(usuario.nombreUsuario + "  " + usuarioSeleccionado);
+            if (usuarioSeleccionado.contains(usuario.nombreUsuario)) {
+                tiempoConectado = usuario.tiempoConectado().toSeconds();
+                ArrayList<String> listaMensajes = usuario.getlistaMensajes();
+                conteoMensajes = contarMensajes(listaMensajes); // Obtener el conteo de mensajes
             }
         }
+        
+        // Crear la ventana nueva
         JDialog nuevaVentana = new JDialog(this, "Detalles del Usuario", true);
-        nuevaVentana.setSize(200, 150);
+        nuevaVentana.setSize(300, 200); // Ajustar el tamaño si es necesario
         nuevaVentana.setLayout(new FlowLayout());
-
+        
         JLabel labelNombreUsuario = new JLabel("Usuario: " + usuarioSeleccionado);
-        JLabel tiempo = new JLabel("Tiempo Online: "+tiempoConectado +" segundos");
+        JLabel tiempo = new JLabel("Tiempo Online: " + tiempoConectado + " segundos");
         nuevaVentana.add(labelNombreUsuario);
         nuevaVentana.add(tiempo);
-
+        
+        // Crear un JTextArea para mostrar el conteo de mensajes
+        JTextArea textoMensajes = new JTextArea(5, 20); // Puedes ajustar el tamaño
+        textoMensajes.setEditable(false); // Hacerlo no editable
+        
+        // Construir el texto para el JTextArea
+        StringBuilder mensajesTexto = new StringBuilder("Destinatarios de Mensajes:\n");
+        for (Map.Entry<String, Integer> entry : conteoMensajes.entrySet()) {
+            mensajesTexto.append(entry.getKey()).append(": ").append(entry.getValue()).append(" mensajes").append("\n");
+        }
+        
+        // Establecer el texto en el JTextArea
+        textoMensajes.setText(mensajesTexto.toString());
+        nuevaVentana.add(new JScrollPane(textoMensajes)); // Agregar el JTextArea a la ventana
+        
         nuevaVentana.setLocationRelativeTo(this);
         nuevaVentana.setVisible(true);
+        
+    }
+
+    public static Map<String, Integer> contarMensajes(ArrayList<String> listaMensajes) {
+        Map<String, Integer> conteo = new HashMap<>();
+
+        // Recorrer cada mensaje en la lista
+        for (String mensaje : listaMensajes) {
+            // Si el mensaje ya está en el mapa, incrementar el contador
+            if (conteo.containsKey(mensaje)) {
+                conteo.put(mensaje, conteo.get(mensaje) + 1);
+            } else {
+                // Si no está, agregarlo con un conteo inicial de 1
+                conteo.put(mensaje, 1);
+            }
+        }
+
+        return conteo;
     }
 }

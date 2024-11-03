@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -24,6 +25,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
     private String contrasena;
     public String nombreUsuario;
     public LocalDateTime horaConexion;
+    public ArrayList<String> listaMensajes;
 
 
     public HiloDeCliente(DefaultListModel mensajes, Socket socket, String nombreUsuario, String rol, String contrasena){
@@ -33,6 +35,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
         this.rol = rol;
         this.contrasena = contrasena;
         this.horaConexion = LocalDateTime.now();
+        this.listaMensajes= new ArrayList<>();
 
         try{
             dataInput = new DataInputStream(socket.getInputStream());
@@ -55,6 +58,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                     continue; // Si es nulo o vacío, ignoramos y seguimos esperando nuevos mensajes
                 }
 
+                //MENSAJE PRIVADO
                 if (texto.charAt(0) == '@') {
                     List<HiloDeCliente> lista = ServidorChat.getListaHilos();
                     String[] partes = texto.split(":", 2);
@@ -67,7 +71,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
 
                     String nombreDestinatario = partes[0].substring(1); // Quitamos el '@'
                     String mensaje = partes[1];
-
+                    this.listaMensajes.add(nombreDestinatario);
                     boolean usuarioEncontrado = false;
 
                     // Buscamos al destinatario en la lista de hilos
@@ -320,9 +324,12 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                     desconectar();
                     break;
                 }
+                
+                //MENSAJE GENERAL
                 if(texto.charAt(0) != '@' && texto.charAt(0) != '/'){ // Si no es un mensaje privado, lo enviamos a todos los clientes
-
                     mensajes.addElement(nombreUsuario + ": " + texto);
+                    this.listaMensajes.add("general");
+
                 }
             }
         } catch (Exception e) {
@@ -363,6 +370,10 @@ public class HiloDeCliente implements Runnable, ListDataListener{
 
     public String getContrasena(){
         return contrasena;
+    }
+
+    public ArrayList<String> getlistaMensajes(){
+        return this.listaMensajes;
     }
 
     @Override
