@@ -48,6 +48,19 @@ public class VentanaGestion extends JFrame {
             }
         });
 
+        // Evento al hacer doble clic en un usuario
+        listaUsuarios.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {  // Doble clic
+                    String usuarioSeleccionado = listaUsuarios.getSelectedValue();
+                    if (usuarioSeleccionado != null) {
+                        mostrarVentanaNueva(usuarioSeleccionado);
+                    }
+                }
+            }
+        });
+
         btnAgregarUsuario.addActionListener(e -> {
             // Lógica para agregar un usuario
             nombreUsuario = JOptionPane.showInputDialog("Ingrese el nombre del usuario");
@@ -67,16 +80,15 @@ public class VentanaGestion extends JFrame {
         setVisible(true);
     }
 
-    public String[] getDatos(){
-        String [] datos = {nombreUsuario, contrasena};
-        return datos;
+    public String[] getDatos() {
+        return new String[]{nombreUsuario, contrasena};
     }
 
     // Método para actualizar las listas
     public void actualizarUsuarios(List<HiloDeCliente> usuarios, List<Grupo> grupos) {
         modeloUsuarios.clear();
         modeloGrupos.clear();
-        listaDeGrupos = grupos;  // Actualizamos la lista de grupos
+        listaDeGrupos = grupos;
 
         for (HiloDeCliente usuario : usuarios) {
             modeloUsuarios.addElement(usuario.getNombreUsuario() + " (" + usuario.getRol() + ")");
@@ -88,32 +100,35 @@ public class VentanaGestion extends JFrame {
 
     // Método para resaltar los miembros del grupo seleccionado
     private void resaltarMiembros(String grupoSeleccionado) {
-    // Limpiamos las selecciones anteriores
-    listaUsuarios.clearSelection();
-
-    // Buscamos el grupo seleccionado
-    for (Grupo grupo : listaDeGrupos) {
-        if (grupo.getNombreGrupo().equals(grupoSeleccionado)) {
-            // Preparamos los índices de los usuarios que deben ser seleccionados
-            List<Integer> indicesSeleccionados = new ArrayList<>();
-            
-            // Iteramos sobre los usuarios en la lista para ver si están en el grupo
-            for (int i = 0; i < modeloUsuarios.getSize(); i++) {
-                String nombreUsuario = modeloUsuarios.getElementAt(i);
-                for (HiloDeCliente usuario : grupo.getListaMiembros()) {
-                    
-                    if (usuario.getNombreUsuario().equals(nombreUsuario)) {
-                        indicesSeleccionados.add(i);  // Guardamos el índice
+        listaUsuarios.clearSelection();
+        for (Grupo grupo : listaDeGrupos) {
+            if (grupo.getNombreGrupo().equals(grupoSeleccionado)) {
+                List<Integer> indicesSeleccionados = new ArrayList<>();
+                for (int i = 0; i < modeloUsuarios.getSize(); i++) {
+                    String nombreUsuario = modeloUsuarios.getElementAt(i);
+                    for (HiloDeCliente usuario : grupo.getListaMiembros()) {
+                        if (usuario.getNombreUsuario().equals(nombreUsuario)) {
+                            indicesSeleccionados.add(i);
+                        }
                     }
                 }
+                int[] indicesArray = indicesSeleccionados.stream().mapToInt(i -> i).toArray();
+                listaUsuarios.setSelectedIndices(indicesArray);
+                return;
             }
-
-            // Seleccionamos los índices correspondientes
-            int[] indicesArray = indicesSeleccionados.stream().mapToInt(i -> i).toArray();
-            listaUsuarios.setSelectedIndices(indicesArray);
-            return;  // Salimos una vez terminado
         }
     }
-}
 
+    // Método para mostrar una nueva ventana con el nombre del usuario seleccionado
+    private void mostrarVentanaNueva(String usuarioSeleccionado) {
+        JDialog nuevaVentana = new JDialog(this, "Detalles del Usuario", true);
+        nuevaVentana.setSize(200, 150);
+        nuevaVentana.setLayout(new FlowLayout());
+
+        JLabel labelNombreUsuario = new JLabel("Usuario: " + usuarioSeleccionado);
+        nuevaVentana.add(labelNombreUsuario);
+
+        nuevaVentana.setLocationRelativeTo(this);
+        nuevaVentana.setVisible(true);
+    }
 }
