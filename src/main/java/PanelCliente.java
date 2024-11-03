@@ -17,6 +17,7 @@ public class PanelCliente extends JPanel {
     private JTextArea textArea;
     private JTextField textField;
     private JButton boton;
+    private JButton btnLimpiarChat; // Nuevo botón para limpiar chat
     private JButton btnCrearGrupo;
     private JButton btnMensajeGrupo;
     private JButton btnAgregarMiembros;
@@ -32,11 +33,12 @@ public class PanelCliente extends JPanel {
         textAreaUsuarios = new JTextArea();
         textAreaUsuarios.setEditable(false);
         scrollUsuarios = new JScrollPane(textAreaUsuarios);
-        scrollUsuarios.setPreferredSize(new Dimension(150, 0));
+        scrollUsuarios.setPreferredSize(new Dimension(105, 0));
         
         JPanel panel = new JPanel(new BorderLayout());
         textField = new JTextField(50);
         boton = new JButton("Enviar");
+        btnLimpiarChat = new JButton("Limpiar Chat"); // Inicializar el botón
         btnAgregarMiembros = new JButton("Agregar Miembros");
         btnMensajeAdministracion = new JButton("Mensaje Administración");
         btnCrearGrupo = new JButton("Crear Grupo");
@@ -44,15 +46,18 @@ public class PanelCliente extends JPanel {
         
         // Configuración de colores de los botones
         boton.setBackground(new Color(173, 216, 230)); 
-        Color botonesColor = new Color(255, 200, 210); 
+        Color botonesColor = new Color(255, 200, 210); // Color común para los botones
 
-        
+        // Asignar el mismo color a todos los botones
+        boton.setBackground(new Color(173, 216, 230));
+        btnLimpiarChat.setBackground(botonesColor); // Mismo color
         btnAgregarMiembros.setBackground(botonesColor);
         btnMensajeAdministracion.setBackground(botonesColor);
         btnCrearGrupo.setBackground(botonesColor);
         btnMensajeGrupo.setBackground(botonesColor);
         
         boton.setForeground(Color.black);
+        btnLimpiarChat.setForeground(Color.black); // Color del texto del nuevo botón
         btnAgregarMiembros.setForeground(Color.black);
         btnMensajeAdministracion.setForeground(Color.black);
         btnCrearGrupo.setForeground(Color.black);
@@ -60,6 +65,7 @@ public class PanelCliente extends JPanel {
 
         panel.add(textField, BorderLayout.NORTH);
         panel.add(boton, BorderLayout.CENTER);
+        panel.add(btnLimpiarChat, BorderLayout.EAST); // Añadir el botón a la derecha
 
         JPanel panelBotones = new JPanel();
         if (!rol.equals("Medicos")) {
@@ -73,6 +79,14 @@ public class PanelCliente extends JPanel {
         contenedor.add(panel, BorderLayout.SOUTH);
         contenedor.add(panelBotones, BorderLayout.NORTH);
         contenedor.add(scrollUsuarios, BorderLayout.EAST);
+
+        // Agregar acción para el botón "Limpiar Chat"
+        btnLimpiarChat.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                textArea.setText(""); // Limpiar el JTextArea
+            }
+        });
     }
 
     public void addActionListener(ActionListener accion) {
@@ -82,6 +96,8 @@ public class PanelCliente extends JPanel {
         btnMensajeGrupo.addActionListener(accion);
         btnAgregarMiembros.addActionListener(accion);
         btnMensajeAdministracion.addActionListener(accion);
+        // Agregar el listener para el botón "Limpiar Chat" si se necesita
+        btnLimpiarChat.addActionListener(accion);
     }
 
     public void addTexto(String texto) {
@@ -106,9 +122,8 @@ public class PanelCliente extends JPanel {
             //List<String> usuariosDelGrupo = grupo.getNombresMiembros();
             List<HiloDeCliente> listaUsuarios = grupo.getListaMiembros();
             for (HiloDeCliente usuario : listaUsuarios) {
-                if(rol.equals("Medicos") && usuario.getRol().equals("Auxiliar")){
-                }
-                else{
+                if (rol.equals("Medicos") && usuario.getRol().equals("Auxiliar")) {
+                } else {
                     texto.append(nombreGrupo).append(":\n");
                     texto.append("   ").append(usuario.nombreUsuario).append("\n");
                 }
