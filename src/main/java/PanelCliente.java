@@ -116,6 +116,7 @@ public class PanelCliente extends JPanel {
 
     public void cambiartextAreaUsuarios(String rol) {
         StringBuilder texto = new StringBuilder();
+        texto.append("GRUPOS:\n\n");
         List<Grupo> grupos = ServidorChat.getListaGrupos();
         for (Grupo grupo : grupos) {
             String nombreGrupo = grupo.getNombreGrupo();
