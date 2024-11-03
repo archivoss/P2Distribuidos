@@ -42,6 +42,11 @@ public class ControlCliente implements ActionListener, Runnable{
             String comando = evento.getActionCommand();
             String texto = panel.getTexto();
 
+            if(rol.equals("Admin")){
+                dataOutput.writeUTF("@emergencia:" + texto);
+                return;
+            }
+
             switch (comando) {
                 case "Ver Usuarios":
                     dataOutput.writeUTF("/usuarios");
@@ -57,6 +62,9 @@ public class ControlCliente implements ActionListener, Runnable{
                     break;
                 case "Mensaje Administración":
                     dataOutput.writeUTF("@mensajeadministracion:" + texto);
+                    break;
+                case "Todos":
+                    dataOutput.writeUTF("@todos:" + texto);
                     break;
                 default:
                     if (texto.equals("@desconectar")) {
@@ -100,12 +108,21 @@ public class ControlCliente implements ActionListener, Runnable{
         }
     }
     private void creaYVisualizaVentana() {
-        ventana = new JFrame("Chat de " + nombreUsuario);
-        ventana.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        panel = new PanelCliente(ventana.getContentPane(), rol);
-        panel.addActionListener(this);
-        ventana.setSize(600, 400);
-        ventana.setVisible(true);
+        if(rol.equals("Admin")){
+            ventana = new JFrame("Chat del administrador");
+            ventana.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+            panel = new PanelCliente(ventana.getContentPane(), rol);
+            panel.addActionListener(this);
+            ventana.setSize(600, 400);
+            ventana.setVisible(true);
+        } else {
+            ventana = new JFrame("Chat de " + nombreUsuario);
+            ventana.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+            panel = new PanelCliente(ventana.getContentPane(), rol);
+            panel.addActionListener(this);
+            ventana.setSize(600, 400);
+            ventana.setVisible(true);
+        }
     }
     public void cerrarSesion() {
         try {

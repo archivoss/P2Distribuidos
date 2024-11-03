@@ -1,6 +1,15 @@
 import javax.swing.*;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import java.awt.*;
 import java.awt.event.*;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,12 +19,16 @@ public class VentanaGestion extends JFrame {
     private JList<String> listaUsuarios;
     private JList<String> listaGrupos;
     private JButton btnAgregarUsuario;
+    private JButton btnChatAdmin;
+    private JButton btnAgregarNuevoUsuarioAJson;
     private List<Grupo> listaDeGrupos;
+    private List<HiloDeCliente> listaDeUsuariosContecados;
     private List<HiloDeCliente> listaUsuariosTotal;
     private String nombreUsuario;
     private String contrasena;
 
-    public VentanaGestion(List<Grupo> grupos, List<HiloDeCliente> usuariosTotal) {
+
+    public VentanaGestion(List<Grupo> grupos, List<HiloDeCliente> usuariosTotal, List<HiloDeCliente> usuariosConectados) {
         setTitle("Gestión del Servidor de Chat");
         setSize(400, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -23,6 +36,7 @@ public class VentanaGestion extends JFrame {
 
         listaDeGrupos = grupos;
         listaUsuariosTotal = usuariosTotal;
+        listaDeUsuariosContecados = usuariosConectados;
 
         // Modelo y lista para mostrar los usuarios conectados
         modeloUsuarios = new DefaultListModel<>();
@@ -34,11 +48,17 @@ public class VentanaGestion extends JFrame {
 
         // Botón para agregar usuarios
         btnAgregarUsuario = new JButton("Agregar Usuario");
+        btnChatAdmin = new JButton("Chat Admin");
+        btnAgregarNuevoUsuarioAJson = new JButton("Agregar Nuevo Usuario a la BD");
+
 
         // Añadir el botón y el scroll a la ventana
         add(scrollUsuarios, BorderLayout.CENTER);
         add(scrollGrupos, BorderLayout.EAST);
+        add(btnChatAdmin, BorderLayout.WEST);
         add(btnAgregarUsuario, BorderLayout.SOUTH);
+        add(btnAgregarNuevoUsuarioAJson, BorderLayout.NORTH);
+
 
         // Evento al seleccionar un grupo
         listaGrupos.addListSelectionListener(e -> {
@@ -64,7 +84,55 @@ public class VentanaGestion extends JFrame {
             }
         });
 
+        btnChatAdmin.addActionListener(e -> {
+            // Lógica para abrir el chat de administración
+            new ClienteChat("Admin", "Admin");
+        });
+
+        btnAgregarNuevoUsuarioAJson.addActionListener(e -> {
+            // Lógica para agregar un nuevo usuario a la base de datos
+            String nombreUsuario = JOptionPane.showInputDialog("Ingrese el nombre del usuario");
+            String rut = JOptionPane.showInputDialog("Ingrese el RUT del usuario");
+            String correo = JOptionPane.showInputDialog("Ingrese el correo del usuario");
+            String contrasena = JOptionPane.showInputDialog("Ingrese la contraseña del usuario");
+            String rol = JOptionPane.showInputDialog("Ingrese el rol del usuario");
+
+            if (nombreUsuario != null && rut != null && correo != null && contrasena != null) {
+                agregarUsuarioAJson(nombreUsuario, rut, correo, contrasena, rol);
+                actualizarListaUsuarios();
+            }
+        });
+
         setVisible(true);
+    }
+
+    private void agregarUsuarioAJson(String nombreUsuario, String rut, String correo, String contrasena, String rol) {
+        try (FileReader reader = new FileReader("usuarios.json")) {
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            JsonArray usuariosArray = jsonObject.getAsJsonArray("usuarios");
+
+            JsonObject nuevoUsuario = new JsonObject();
+            nuevoUsuario.addProperty("nombreUsuario", nombreUsuario);
+            nuevoUsuario.addProperty("rol", rol); // Asignar rol según sea necesario
+            nuevoUsuario.addProperty("contrasena", contrasena);
+            nuevoUsuario.addProperty("conectado", false);
+            nuevoUsuario.addProperty("rut", rut);
+            nuevoUsuario.addProperty("correo", correo);
+
+            usuariosArray.add(nuevoUsuario);
+
+            try (FileWriter writer = new FileWriter("usuarios.json")) {
+                gson.toJson(jsonObject, writer);
+                JOptionPane.showMessageDialog(this, "Usuario agregado exitosamente a la base de datos.");
+            } catch (IOException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al guardar el usuario en la base de datos.");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al leer la base de datos.");
+        }
     }
 
     public String[] getDatos(){
@@ -83,6 +151,29 @@ public class VentanaGestion extends JFrame {
         }
         for (Grupo grupo : grupos) {
             modeloGrupos.addElement(grupo.getNombreGrupo());
+        }
+    }
+
+    // Método para actualizar la lista de usuarios
+    private void actualizarListaUsuarios() {
+        listaUsuariosTotal.clear();
+        try (FileReader reader = new FileReader("usuarios.json")) {
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            JsonArray usuariosArray = jsonObject.getAsJsonArray("usuarios");
+
+            for (JsonElement usuarioElement : usuariosArray) {
+                JsonObject usuarioObject = usuarioElement.getAsJsonObject();
+                String nombreUsuario = usuarioObject.get("nombreUsuario").getAsString();
+                String contrasena = usuarioObject.get("contrasena").getAsString();
+                String rol = usuarioObject.get("rol").getAsString();
+                HiloDeCliente cliente = new HiloDeCliente(null, null, nombreUsuario, rol, contrasena);
+                listaUsuariosTotal.add(cliente);
+            }
+            actualizarUsuarios(listaDeUsuariosContecados, listaDeGrupos);
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al leer la base de datos.");
         }
     }
 
