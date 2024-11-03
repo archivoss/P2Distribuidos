@@ -19,6 +19,7 @@ public class ServidorChat {
     private DefaultListModel mensajes = new DefaultListModel();
     private static List<HiloDeCliente> listaHilos = new ArrayList<>();
     private static List<Grupo> listaGrupos = new ArrayList<>();
+    private static List<HiloDeCliente> listaUsuariosTotal = new ArrayList<>();
     private int contadorUsuarios = 1;
     private static VentanaGestion ventanaGestion; // Instancia de VentanaGestion
 
@@ -29,29 +30,37 @@ public class ServidorChat {
     public ServidorChat() {
         try {
 
-            ventanaGestion = new VentanaGestion(listaGrupos);
+            
+
             // Leer el archivo JSON y crear los grupos
             leerGruposDesdeJson("grupos.json");
-
-            
+            leerUsuariosDesdeJson("usuarios.json");
+            ventanaGestion = new VentanaGestion(listaGrupos, listaUsuariosTotal);
+            ventanaGestion.actualizarUsuarios(listaHilos, listaGrupos);
             ServerSocket socketServidor = new ServerSocket(5000);
             while (true) {
                 Socket cliente = socketServidor.accept();
+                String[] datos = ventanaGestion.getDatos();
 
-                String nombreUsuario = "Usuario" + contadorUsuarios;
-                String rol = JOptionPane.showInputDialog(null, "Ingrese el rol del usuario: ");
-                Runnable nuevoCliente = new HiloDeCliente(mensajes, cliente, nombreUsuario, rol);
-                Thread hilo = new Thread(nuevoCliente);
-                hilo.start();
-                System.out.println("Nuevo cliente conectado: " + nombreUsuario);
-                listaHilos.add((HiloDeCliente) nuevoCliente);
-
-                // Agregar el usuario al grupo basado en su rol
-                agregarUsuarioAGrupoPorRol((HiloDeCliente) nuevoCliente, rol);
-                // Actualiza la lista de usuarios en la ventana
-                ventanaGestion.actualizarUsuarios(listaHilos, listaGrupos);
-
-                contadorUsuarios++;
+                System.out.println("Usuario conectado: " + datos[0]);
+                //validar si el usuario existe
+            
+                for (HiloDeCliente usuario : listaUsuariosTotal) {
+                    if (usuario.getNombreUsuario().equals(datos[0])) {
+                        if (usuario.getContrasena().equals(datos[1])) {
+                            Runnable nuevoCliente = new HiloDeCliente(mensajes, cliente, datos[0], usuario.getRol(), usuario.getContrasena());
+                            Thread hilo = new Thread(nuevoCliente);
+                            hilo.start();
+                            listaHilos.add((HiloDeCliente) nuevoCliente);
+                            ventanaGestion.actualizarUsuarios(listaHilos, listaGrupos);
+                            break;
+                        } else {
+                            System.out.println("Contraseña incorrecta");
+                            cliente.close();
+                            continue;
+                        }
+                    }
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -70,7 +79,25 @@ public class ServidorChat {
                 Grupo grupo = new Grupo(nombreGrupo);
                 listaGrupos.add(grupo);
             }
-            ventanaGestion.actualizarUsuarios(listaHilos, listaGrupos);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    private void leerUsuariosDesdeJson(String archivo) {
+        try (FileReader reader = new FileReader(archivo)) {
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            JsonArray usuariosArray = jsonObject.getAsJsonArray("usuarios");
+
+            for (JsonElement usuarioElement : usuariosArray) {
+                JsonObject usuarioObject = usuarioElement.getAsJsonObject();
+                String nombreUsuario = usuarioObject.get("nombreUsuario").getAsString();
+                String contrasena = usuarioObject.get("contrasena").getAsString();
+                String rol = usuarioObject.get("rol").getAsString();
+                HiloDeCliente cliente = new HiloDeCliente(mensajes, null, nombreUsuario, rol, contrasena);
+                listaUsuariosTotal.add(cliente);
+                agregarUsuarioAGrupoPorRol(cliente, rol);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

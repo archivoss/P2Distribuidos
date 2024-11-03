@@ -38,32 +38,30 @@ public class ControlCliente implements ActionListener, Runnable{
             String comando = evento.getActionCommand();
             String texto = panel.getTexto();
 
-            if(texto.equals("@mensajeadminitracion")){
-                dataOutput.writeUTF("/mensajeadministracion");
-                return;
+            switch (comando) {
+                case "Ver Usuarios":
+                    dataOutput.writeUTF("/usuarios");
+                    break;
+                case "Crear Grupo":
+                    dataOutput.writeUTF("@creargrupo:" + texto);
+                    break;
+                case "Mensaje Grupo":
+                    dataOutput.writeUTF("@mensajegrupo:" + texto);
+                    break;
+                case "Agregar Miembros":
+                    dataOutput.writeUTF("@agregarmiembros:" + texto);
+                    break;
+                case "Mensaje Administración":
+                    dataOutput.writeUTF("@mensajeadministracion:" + texto);
+                    break;
+                default:
+                    if (texto.equals("@desconectar")) {
+                        dataOutput.writeUTF("/desconectar");
+                    } else {
+                        dataOutput.writeUTF(texto);
+                    }
+                    break;
             }
-            if(texto.equals("@mensajegrupo")){
-                dataOutput.writeUTF("/mensajegrupo");
-                return;
-            }
-            if(texto.equals("@agregarmiembros")){
-                dataOutput.writeUTF("/agregarmiembros");
-                return;
-            }
-            
-            if(texto.equals("@creargrupo")){
-                dataOutput.writeUTF("/creargrupo");
-                return;
-            }
-            if(texto.equals("@desconectar")){
-                dataOutput.writeUTF("/desconectar");
-                return;
-            }else {
-                dataOutput.writeUTF(texto);
-            }
-            if(comando.equals("Ver Usuarios")){
-                dataOutput.writeUTF("/usuarios");
-            } 
         } catch (Exception excepcion){
             excepcion.printStackTrace();
         }
