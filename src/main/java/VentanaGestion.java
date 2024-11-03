@@ -226,6 +226,8 @@ public class VentanaGestion extends JFrame {
             if (usuarioSeleccionado.contains(usuario.nombreUsuario)) {
                 tiempoConectado = usuario.tiempoConectado().toSeconds();
                 ArrayList<String> listaMensajes = usuario.getlistaMensajes();
+
+                System.out.println(listaMensajes);
                 conteoMensajes = contarMensajes(listaMensajes); // Obtener el conteo de mensajes
             }
         }
