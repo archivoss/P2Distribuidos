@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -35,8 +37,10 @@ public class HiloDeCliente implements Runnable, ListDataListener{
     public String nombreUsuario;
     public LocalDateTime horaConexion;
     public ArrayList<String> listaMensajes;
+
     private List<String> mensajesHistorial;
     private List<String> mensajesAdmin;
+    private List<String> mensajesGrupo;
 
 
     public HiloDeCliente(DefaultListModel mensajes, Socket socket, String nombreUsuario, String rol, String contrasena){
@@ -48,6 +52,8 @@ public class HiloDeCliente implements Runnable, ListDataListener{
         this.horaConexion = LocalDateTime.now();
         this.listaMensajes= new ArrayList<>();
         this.mensajesHistorial = new ArrayList<>();
+        this.mensajesAdmin = new ArrayList<>();
+        this.mensajesGrupo = new ArrayList<>();
 
         try{
             dataInput = new DataInputStream(socket.getInputStream());
@@ -87,6 +93,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                             try {
                                 dataOutput.writeUTF("[Mensaje privado enviado a (" + nombreDestinatario + ")]: " + mensaje);
                                 mensajesHistorial.add("[Mensaje privado enviado a (" + nombreDestinatario + ")]: " + mensaje);
+                                guardarMensajeHilo(nombreUsuario, "[Mensaje privado enviado a (" + nombreDestinatario + ")]: " + mensaje);
                                 hilo.mensajePrivado(nombreUsuario, mensaje, hilo);
                                 usuarioEncontrado = true;
                                 break;
@@ -110,6 +117,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                         List<HiloDeCliente> lista = ServidorChat.getListaHilos();
                         List<Grupo> listaGrupos = ServidorChat.getListaGrupos();
                         List<String> gruposAdministracion = Arrays.asList("Medicos","Admision", "Pabellon", "Examenes");
+                        int contador = 0;
 
                         for (Grupo grupo : listaGrupos) {
                             if (gruposAdministracion.contains(grupo.getNombreGrupo())) {
@@ -118,7 +126,12 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                                         for(HiloDeCliente hilo : lista){
                                             if(hilo.getNombreUsuario().equals(miembro.getNombreUsuario())){
                                                 try {
-                                                    hilo.dataOutput.writeUTF("[Mensaje enviado a (Administración)]: " + mensaje);
+                                                    hilo.dataOutput.writeUTF("[Mensaje enviado a (ADMINISTRACIÓN)]: " + mensaje);
+                                                    if(contador == 0 && hilo.getNombreUsuario().equals(nombreUsuario)){
+                                                        grupo.setMensajes("[Mensaje enviado a (ADMINISTRACIÓN)]: " + mensaje);
+                                                        guardarMensajeHilo(hilo.getNombreUsuario(), "[Mensaje enviado a (ADMINISTRACIÓN)]: " + mensaje);
+                                                        contador++;
+                                                    }
                                                 } catch (Exception e) {
                                                     e.printStackTrace();
                                                 }
@@ -339,6 +352,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                 if(texto.charAt(0) != '@' && texto.charAt(0) != '/'){ // Si no es un mensaje privado, lo enviamos a todos los clientes
                     
                     this.listaMensajes.add("general");
+                    int aux = 0;
 
                     //enviamos un mensaje solamente al grupo donde pertenece el usuario
                     List<Grupo> listaGrupos = ServidorChat.getListaGrupos();
@@ -346,26 +360,35 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                     for (Grupo grupo : listaGrupos) {
                         for (HiloDeCliente miembro : grupo.getListaMiembros()) {
                             if(miembro.getNombreUsuario().equals(nombreUsuario) && !grupo.getNombreGrupo().equals("Auxiliar")){
+                                
                                 for (HiloDeCliente hilo : grupo.getListaMiembros()) {
                                     for (HiloDeCliente hiloAux : lista) {
-                                        int contador = 0;
                                         if(hilo.getNombreUsuario().equals(hiloAux.getNombreUsuario())){
                                             hiloAux.dataOutput.writeUTF("[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + nombreUsuario + ")]: " + texto);
-                                            if(contador == 0){
+                                            if(aux == 0){
                                                 grupo.setMensajes("[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + nombreUsuario + ")]: " + texto);
-                                                contador++;
+                                                guardarMensajeGrupo(grupo.getNombreGrupo(), "[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + nombreUsuario + ")]: " + texto);
+                                                System.out.println("aqui");
+                                                aux++;
+                                                
                                             }
                                         }
                                     }
                                 }
                             }
                             if(miembro.getNombreUsuario().equals(nombreUsuario) && grupo.getNombreGrupo().equals("Auxiliar")){
+                                int contador = 0;
                                 for (HiloDeCliente hilo : lista) {
                                     hilo.dataOutput.writeUTF("[Mensaje desde el grupo (Auxiliar)]: " + texto);
+                                    if(contador == 0){
+                                        grupo.setMensajes("[Mensaje desde el grupo (Auxiliar)]: " + texto);
+                                        guardarMensajeGrupo(grupo.getNombreGrupo(), "[Mensaje desde el grupo (Auxiliar)]: " + texto);
+                                        contador++;
+                                    }
                                 }
                             }
                         }
-
+                        
 
                     }
                 }
@@ -375,6 +398,9 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                     for (HiloDeCliente hilo : lista){
                         hilo.dataOutput.writeUTF("[Mensaje para todos de (" + hilo.nombreUsuario + ")]: " + mensaje);
                         mensajesHistorial.add("[Mensaje para todos de (" + hilo.nombreUsuario + ")]: " + mensaje);
+                        if(hilo.getNombreUsuario().equals(nombreUsuario)){
+                            hilo.setMensajesHistorial("[Enviaste un mensaje para todos]: " + mensaje);
+                        }
                     }
                 }
                 if(texto.startsWith("@emergencia:")){
@@ -389,7 +415,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                     List<Grupo> listaGrupos = ServidorChat.getListaGrupos();
 
                     List<String> todosLosMensajes = new ArrayList<>();
-                
+                    boolean aux = false;
                     // Separar el mensaje y capturar el nombre del grupo
                     String nombreGrupo = texto.substring(11).trim(); // Comienza desde el índice 11 y elimina espacios en blanco
                 
@@ -397,7 +423,9 @@ public class HiloDeCliente implements Runnable, ListDataListener{
 
                         for (HiloDeCliente hilo : lista) {
                             if (hilo.getNombreUsuario().equals(nombreUsuario)) {
-                                todosLosMensajes.addAll(hilo.getMensajesHistorial());
+                                leerMensajeHiloDesdeJson("usuarios.json", hilo.getNombreUsuario());
+                                todosLosMensajes.addAll(listaMensajes);
+                                //todosLosMensajes.addAll(hilo.getMensajesHistorial());
                                 break;
                             }
                         }
@@ -416,7 +444,9 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                                 if(miembro.getNombreUsuario().equals(nombreUsuario)){
                                     for (HiloDeCliente hilo : lista) {
                                         if (hilo.getNombreUsuario().equals(nombreUsuario)) {
-                                            todosLosMensajes.addAll(grupo.getMensajes());
+                                            leerMensajeGrupoDesdeJson("grupos.json", grupo.getNombreGrupo());
+                                            todosLosMensajes.addAll(mensajesGrupo);
+                                            //todosLosMensajes.addAll(grupo.getMensajes());
                                             break;
                                         }
                                     }
@@ -443,7 +473,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                     if(nombreGrupo.equals("Administracion")){
                         leerMensajesAdminDesdeJson("mensajesAdmin.json");
                         for (HiloDeCliente hilo : lista) {
-                            if (hilo.getNombreUsuario().equals(nombreUsuario)) {
+                            if (hilo.getNombreUsuario().equals(nombreUsuario) && !hilo.getRol().equals("Auxiliar")) {
                                 List<String> mensajes = hilo.mensajesAdmin;
                                 dataOutput.writeUTF("");
                                 dataOutput.writeUTF("-----------------HISTORIAL DE MENSAJES ADMINISTRACIÓN------------------");
@@ -455,6 +485,10 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                                 dataOutput.writeUTF("");
                                 dataOutput.writeUTF("----------------------------------------------------------------------------------------");
                                 dataOutput.writeUTF("");
+                            }
+                            if(hilo.getNombreUsuario().equals(nombreUsuario) && hilo.getRol().equals("Auxiliar")){
+                                dataOutput.writeUTF("No tienes permiso para ver el historial de mensajes de administración.");
+                                
                             }
                         }
                     } else{
@@ -475,9 +509,9 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                         if(usuarioEncontrado == true ){
                             for (Grupo grupo : listaGrupos) {
                                 if (grupo.getNombreGrupo().equals(nombreGrupo)) {
+                                    leerMensajeGrupoDesdeJson("grupos.json", nombreGrupo);
                                     for (HiloDeCliente miembro : grupo.getListaMiembros()) {
                                         if (miembro.getNombreUsuario().equals(nombreUsuario)) {
-                                            List<String> mensajes = grupo.getMensajes();
                                             nombreGrupo = grupo.getNombreGrupo();
                                             if(nombreGrupo.equals("Admision")){
                                                 nombreGrupo = "ADMISIÓN";
@@ -488,11 +522,19 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                                             if(nombreGrupo.equals("Examenes")){
                                                 nombreGrupo = "EXÁMENES";
                                             }
+                                            if(nombreGrupo.equals("Medicos")){
+                                                nombreGrupo = "MÉDICOS";
+                                            }
+
+                                            eliminarDuplicados(mensajesGrupo);
+
+                                            System.out.println(mensajesGrupo);
+
                                             dataOutput.writeUTF("");
                                             dataOutput.writeUTF("-----------------HISTORIAL DE MENSAJES GRUPO " + nombreGrupo + "------------------");
                                             dataOutput.writeUTF("");
-                                            for (int i = 0; i < mensajes.size(); i += 2) {
-                                                String mensaje = mensajes.get(i);
+                                            for (int i = 0; i < mensajesGrupo.size(); i ++) {
+                                                String mensaje = mensajesGrupo.get(i);
                                                 
                                                 dataOutput.writeUTF(mensaje);
                                             }
@@ -516,14 +558,188 @@ public class HiloDeCliente implements Runnable, ListDataListener{
     }
     
 
-    private void mensajePrivado (String nombreDestinatario, String mensaje, HiloDeCliente hilo){    
+    private void mensajePrivado (String nombreDestinatario, String mensaje, HiloDeCliente hilo) {    
         try{
             hilo.dataOutput.writeUTF("[Mensaje privado de (" + nombreDestinatario + ")]: " + mensaje);
             hilo.setMensajesHistorial("[Mensaje privado de (" + nombreDestinatario + ")]: " + mensaje);
+            guardarMensajeHilo(hilo.getNombreUsuario(), "[Mensaje privado de (" + nombreDestinatario + ")]: " + mensaje);
         } catch (Exception e){
             e.printStackTrace();
         }
     }
+
+    private void guardarMensajeHilo(String destinatario, String mensaje) {
+        try {
+            // Leer el archivo y el JSON existente
+            FileReader reader = new FileReader("usuarios.json");
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            reader.close();
+    
+            // Obtener el array "usuarios"
+            JsonArray usuariosArray = jsonObject.getAsJsonArray("usuarios");
+    
+            // Buscar el usuario destinatario en el JSON
+            for (JsonElement usuarioElement : usuariosArray) {
+                JsonObject usuarioObject = usuarioElement.getAsJsonObject();
+                String nombreUsuario = usuarioObject.get("nombreUsuario").getAsString();
+    
+                if (nombreUsuario.equals(destinatario)) {
+                    // Obtener o crear el array "mensajes" para el destinatario
+                    JsonArray mensajesArray;
+                    if (usuarioObject.has("mensajes")) {
+                        mensajesArray = usuarioObject.getAsJsonArray("mensajes");
+                    } else {
+                        mensajesArray = new JsonArray();
+                        usuarioObject.add("mensajes", mensajesArray);
+                    }
+    
+                    // Crear un nuevo objeto de mensaje y añadirlo al array de mensajes
+                    JsonObject nuevoMensaje = new JsonObject();
+                    nuevoMensaje.addProperty("mensaje", mensaje);
+                    mensajesArray.add(nuevoMensaje);
+    
+                    // Guardar el JSON actualizado en el archivo
+                    FileWriter writer = new FileWriter("usuarios.json");
+                    gson.toJson(jsonObject, writer);
+                    writer.close();
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error al guardar el mensaje en el archivo.");
+        }
+    }
+
+    private void leerMensajeHiloDesdeJson(String archivo, String destinatario) {
+        // Asegúrate de que mensajes esté inicializado
+        if (listaMensajes == null) {
+            listaMensajes = new ArrayList<>();
+        }
+    
+        try (FileReader reader = new FileReader(archivo)) {
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            
+            // Obtener el arreglo "usuarios"
+            JsonArray usuariosArray = jsonObject.getAsJsonArray("usuarios");
+            if (usuariosArray != null && usuariosArray.size() > 0) {
+                // Buscar el usuario destinatario en el JSON
+                for (JsonElement usuarioElement : usuariosArray) {
+                    JsonObject usuarioObject = usuarioElement.getAsJsonObject();
+                    String nombreUsuarioJson = usuarioObject.get("nombreUsuario").getAsString();
+    
+                    if (nombreUsuarioJson.equals(destinatario)) {
+                        // Obtener el arreglo "mensajes" dentro del usuario
+                        JsonArray mensajesArray = usuarioObject.getAsJsonArray("mensajes");
+                        if (mensajesArray != null) {
+                            // Agregar cada mensaje a mensajes
+                            for (JsonElement mensajeElement : mensajesArray) {
+                                JsonObject mensajeObject = mensajeElement.getAsJsonObject();
+                                String mensaje = mensajeObject.get("mensaje").getAsString(); // Asegúrate que el campo sea "mensaje"
+                                listaMensajes.add(mensaje);
+                            }
+                        } else {
+                            System.out.println("El arreglo 'mensajes' está vacío o no existe.");
+                        }
+                        break;
+                    }
+                }
+            } else {
+                System.out.println("El arreglo 'usuarios' está vacío o no existe.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void guardarMensajeGrupo(String nombreGrupo, String mensaje){
+        try {
+            // Leer el archivo y el JSON existente
+            FileReader reader = new FileReader("grupos.json");
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            reader.close();
+    
+            // Obtener el array "grupos"
+            JsonArray gruposArray = jsonObject.getAsJsonArray("grupos");
+    
+            // Buscar el grupo en el JSON
+            for (JsonElement grupoElement : gruposArray) {
+                JsonObject grupoObject = grupoElement.getAsJsonObject();
+                String nombreGrupoJson = grupoObject.get("nombreGrupo").getAsString();
+    
+                if (nombreGrupoJson.equals(nombreGrupo)) {
+                    // Obtener o crear el array "mensajes" para el grupo
+                    JsonArray mensajesArray;
+                    if (grupoObject.has("mensajes")) {
+                        mensajesArray = grupoObject.getAsJsonArray("mensajes");
+                    } else {
+                        mensajesArray = new JsonArray();
+                        grupoObject.add("mensajes", mensajesArray);
+                    }
+    
+                    // Crear un nuevo objeto de mensaje y añadirlo al array de mensajes
+                    JsonObject nuevoMensaje = new JsonObject();
+                    nuevoMensaje.addProperty("mensaje", mensaje);
+                    mensajesArray.add(nuevoMensaje);
+    
+                    // Guardar el JSON actualizado en el archivo
+                    FileWriter writer = new FileWriter("grupos.json");
+                    gson.toJson(jsonObject, writer);
+                    writer.close();
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error al guardar el mensaje en el archivo.");
+        }
+    }
+
+    private void leerMensajeGrupoDesdeJson(String archivo, String nombreGrupo) {
+        // Asegúrate de que mensajesGrupo esté inicializado
+        if (mensajesHistorial == null) {
+            mensajesHistorial = new ArrayList<>();
+        }
+    
+        try (FileReader reader = new FileReader(archivo)) {
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            
+            // Obtener el arreglo "grupos"
+            JsonArray gruposArray = jsonObject.getAsJsonArray("grupos");
+            if (gruposArray != null && gruposArray.size() > 0) {
+                // Buscar el grupo en el JSON
+                for (JsonElement grupoElement : gruposArray) {
+                    JsonObject grupoObject = grupoElement.getAsJsonObject();
+                    String nombreGrupoJson = grupoObject.get("nombreGrupo").getAsString();
+    
+                    if (nombreGrupoJson.equals(nombreGrupo)) {
+                        // Obtener el arreglo "mensajes" dentro del grupo
+                        JsonArray mensajesArray = grupoObject.getAsJsonArray("mensajes");
+                        if (mensajesArray != null) {
+                            // Agregar cada mensaje a mensajesGrupo
+                            for (JsonElement mensajeElement : mensajesArray) {
+                                JsonObject mensajeObject = mensajeElement.getAsJsonObject();
+                                String mensaje = mensajeObject.get("mensaje").getAsString(); // Asegúrate que el campo sea "mensaje"
+                                mensajesGrupo.add(mensaje);
+                            }
+                        } else {
+                            System.out.println("El arreglo 'mensajes' está vacío o no existe.");
+                        }
+                        break;
+                    }
+                }
+            } else {
+                System.out.println("El arreglo 'grupos' está vacío o no existe.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
 
     public String getNombreUsuario(){
         return nombreUsuario;
@@ -631,8 +847,15 @@ public class HiloDeCliente implements Runnable, ListDataListener{
     }
     
     private List<String> eliminarDuplicados(List<String> mensajes) {
-        return new ArrayList<>(new LinkedHashSet<>(mensajes));
+    // Filtramos los mensajes que comiencen con "["
+        List<String> mensajesFiltrados = mensajes.stream()
+                                                .filter(mensaje -> mensaje.startsWith("["))
+                                                .collect(Collectors.toList());
+        
+        // Eliminamos duplicados usando LinkedHashSet y devolvemos una nueva lista
+        return new ArrayList<>(new LinkedHashSet<>(mensajesFiltrados));
     }
+
 
 
     @Override

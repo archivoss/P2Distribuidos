@@ -135,6 +135,7 @@ public class VentanaGestion extends JFrame {
             nuevoUsuario.addProperty("conectado", false);
             nuevoUsuario.addProperty("rut", rut);
             nuevoUsuario.addProperty("correo", correo);
+            nuevoUsuario.addProperty("mensajes", " ");
 
             usuariosArray.add(nuevoUsuario);
 
