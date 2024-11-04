@@ -30,6 +30,7 @@ public class VentanaGestion extends JFrame {
     private List<HiloDeCliente> listaUsuariosTotal;
     private String nombreUsuario;
     private String contrasena;
+    boolean cambioClave = false;
 
 
     public VentanaGestion(List<Grupo> grupos, List<HiloDeCliente> usuariosTotal, List<HiloDeCliente> usuariosConectados) {
@@ -92,11 +93,37 @@ public class VentanaGestion extends JFrame {
 
         btnReiniciarContrasena.addActionListener(e ->{
             reiniciarContrasena();
+            JOptionPane.showMessageDialog(this, "Se ha reiniciado la contraseña del usuario.");
         });
 
         btnAgregarUsuario.addActionListener(e -> {
             // Lógica para agregar un usuario
             nombreUsuario = JOptionPane.showInputDialog("Ingrese el nombre del usuario");
+
+            if (nombreUsuario == null || nombreUsuario.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "El nombre del usuario no puede estar vacío.");
+                return;
+            }
+
+            for (HiloDeCliente usuario : listaUsuariosTotal) {
+                if (usuario.getNombreUsuario().equals(nombreUsuario)) {
+                    leerUsuariosDesdeJson("usuarios.json");
+                    if(!cambioClave){
+                        String nuevaContrasena = JOptionPane.showInputDialog("¿Primera vez? !Actualicemos tu contraseña " + nombreUsuario + "!");
+                        if (nuevaContrasena != null && !nuevaContrasena.trim().isEmpty()) {
+                            usuario.setContrasena(nuevaContrasena);
+                            actualizarContrasenaEnJson(nombreUsuario, nuevaContrasena, true);
+                            JOptionPane.showMessageDialog(this, "Contraseña actualizada exitosamente.");
+                            break;
+                        } else {
+                            JOptionPane.showMessageDialog(this, "La nueva contraseña no puede estar vacía.");
+                        }
+                    }
+                    
+                }
+            }
+
+
             contrasena = JOptionPane.showInputDialog("Ingrese la contraseña del usuario");
 
             boolean usuarioExiste = false;
@@ -153,16 +180,7 @@ public class VentanaGestion extends JFrame {
             for (HiloDeCliente usuario : listaUsuariosTotal) {
                 if (usuario.getNombreUsuario().equals(nombreUsuario)) {
                     usuarioEncontrado = true;
-                    String nuevaContrasena = JOptionPane.showInputDialog("Ingrese la nueva contraseña para el usuario " + nombreUsuario);
-
-                    if (nuevaContrasena != null && !nuevaContrasena.trim().isEmpty()) {
-                        usuario.setContrasena(nuevaContrasena);
-                        actualizarContrasenaEnJson(nombreUsuario, nuevaContrasena);
-                        JOptionPane.showMessageDialog(this, "Contraseña actualizada exitosamente.");
-                    } else {
-                        JOptionPane.showMessageDialog(this, "La nueva contraseña no puede estar vacía.");
-                    }
-                    break;
+                    actualizarContrasenaEnJson(usuario.getNombreUsuario(),"" ,false);
                 }
             }
 
@@ -175,7 +193,7 @@ public class VentanaGestion extends JFrame {
     }
 
     // Método para actualizar la contraseña en el archivo JSON
-    private void actualizarContrasenaEnJson(String nombreUsuario, String nuevaContrasena) {
+    private void actualizarContrasenaEnJson(String nombreUsuario, String contrasena,boolean cambioClave) {
         try (FileReader reader = new FileReader("usuarios.json")) {
             Gson gson = new Gson();
             JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
@@ -184,7 +202,8 @@ public class VentanaGestion extends JFrame {
             for (JsonElement usuarioElement : usuariosArray) {
                 JsonObject usuarioObject = usuarioElement.getAsJsonObject();
                 if (usuarioObject.get("nombreUsuario").getAsString().equals(nombreUsuario)) {
-                    usuarioObject.addProperty("contrasena", nuevaContrasena);
+                    usuarioObject.addProperty("contrasena", contrasena);
+                    usuarioObject.addProperty("cambioClave", cambioClave);
                     break;
                 }
             }
@@ -210,11 +229,11 @@ public class VentanaGestion extends JFrame {
             JsonObject nuevoUsuario = new JsonObject();
             nuevoUsuario.addProperty("nombreUsuario", nombreUsuario);
             nuevoUsuario.addProperty("rol", rol); // Asignar rol según sea necesario
-            nuevoUsuario.addProperty("contrasena", contrasena);
-            nuevoUsuario.addProperty("conectado", false);
+            nuevoUsuario.addProperty("contrasena", " ");
             nuevoUsuario.addProperty("rut", rut);
             nuevoUsuario.addProperty("correo", correo);
             nuevoUsuario.addProperty("mensajes", " ");
+            nuevoUsuario.addProperty("cambioClave", false);
 
             usuariosArray.add(nuevoUsuario);
 
@@ -353,5 +372,27 @@ public class VentanaGestion extends JFrame {
         }
 
         return conteo;
+    }
+
+    public void leerUsuariosDesdeJson(String archivo) {
+        try (FileReader reader = new FileReader(archivo)) {
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            JsonArray usuariosArray = jsonObject.getAsJsonArray("usuarios");
+    
+            for (JsonElement usuarioElement : usuariosArray) {
+                JsonObject usuarioObject = usuarioElement.getAsJsonObject();
+                String nombreUsuarioJson = usuarioObject.get("nombreUsuario").getAsString();
+    
+                if (nombreUsuarioJson.equals(nombreUsuario)) {
+                    System.out.println("usuario: " + nombreUsuarioJson + " " + usuarioObject.get("cambioClave").getAsBoolean());
+                    cambioClave = usuarioObject.get("cambioClave").getAsBoolean();
+                    return;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al leer la base de datos.");
+        }
     }
 }

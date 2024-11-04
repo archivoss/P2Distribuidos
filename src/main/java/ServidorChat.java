@@ -20,7 +20,6 @@ public class ServidorChat {
     private static List<HiloDeCliente> listaHilos = new ArrayList<>();
     private static List<Grupo> listaGrupos = new ArrayList<>();
     private static List<HiloDeCliente> listaUsuariosTotal = new ArrayList<>();
-    private int contadorUsuarios = 1;
     private static VentanaGestion ventanaGestion; // Instancia de VentanaGestion
 
     public static void main(String[] args) {
@@ -42,25 +41,53 @@ public class ServidorChat {
                 Socket cliente = socketServidor.accept();
                 String[] datos = ventanaGestion.getDatos();
 
+
                 System.out.println("Usuario conectado: " + datos[0]);
+                if(datos[0] == null){
+                    datos[0] = "Admin";
+                }
                 //validar si el usuario existe
-            
-                for (HiloDeCliente usuario : listaUsuariosTotal) {
-                    if (usuario.getNombreUsuario().equals(datos[0])) {
-                        if (usuario.getContrasena().equals(datos[1])) {
-                            Runnable nuevoCliente = new HiloDeCliente(mensajes, cliente, datos[0], usuario.getRol(), usuario.getContrasena());
-                            Thread hilo = new Thread(nuevoCliente);
-                            hilo.start();
-                            listaHilos.add((HiloDeCliente) nuevoCliente);
-                            ventanaGestion.actualizarUsuarios(listaHilos, listaGrupos);
-                            break;
-                        } else {
-                            System.out.println("Contraseña incorrecta");
-                            cliente.close();
-                            continue;
+                
+                if(datos[0] == "Admin"){
+                    Runnable nuevoCliente = new HiloDeCliente(mensajes, cliente, datos[0], "Admin", "admin");
+                    Thread hilo = new Thread(nuevoCliente);
+                    hilo.start();
+                    continue;
+                } else{
+                    for (HiloDeCliente usuario : listaUsuariosTotal) {
+                        if (usuario.getNombreUsuario().equals(datos[0])) {
+                            if (usuario.getContrasena().equals(datos[1])) {
+                                Runnable nuevoCliente = new HiloDeCliente(mensajes, cliente, datos[0], usuario.getRol(), usuario.getContrasena());
+                                Thread hilo = new Thread(nuevoCliente);
+                                hilo.start();
+                                listaHilos.add((HiloDeCliente) nuevoCliente);
+
+                                //revisar si el usuario pertenece a un grupo, si no pertenece, agregarlo al grupo de segun su rol
+                                boolean pertenece = false;
+                                for (Grupo grupo : listaGrupos) {
+                                    for(HiloDeCliente miembro : grupo.getListaMiembros()){
+                                        if(miembro.getNombreUsuario().equals(usuario.getNombreUsuario())){
+                                            pertenece = true;
+                                        }
+                                    }
+                                }
+                                if (!pertenece) {
+                                    System.out.println("Usuario no pertenece a un grupo, se agregará al grupo de su rol");
+                                    agregarUsuarioAGrupoPorRol(usuario, usuario.getRol());
+                                }
+                                ventanaGestion.actualizarUsuarios(listaHilos, listaGrupos);
+                            
+                                break;
+                            } else {
+                                System.out.println("Contraseña incorrecta");
+                                cliente.close();
+                                continue;
+                            }
                         }
                     }
                 }
+
+                
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -103,7 +130,7 @@ public class ServidorChat {
         }
     }
 
-    private void agregarUsuarioAGrupoPorRol(HiloDeCliente cliente, String rol) {
+    public void agregarUsuarioAGrupoPorRol(HiloDeCliente cliente, String rol) {
         Grupo grupo = listaGrupos.stream()
                 .filter(g -> g.getNombreGrupo().equals(rol))
                 .findFirst()
@@ -132,5 +159,6 @@ public class ServidorChat {
 
     public static synchronized void eliminarCliente(HiloDeCliente cliente) {
         listaHilos.remove(cliente);
+        ventanaGestion.actualizarUsuarios(listaHilos, listaGrupos);
     }
 }
