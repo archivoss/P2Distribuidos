@@ -381,7 +381,6 @@ public class HiloDeCliente implements Runnable, ListDataListener {
                                             if(aux == 0){
                                                 grupo.setMensajes("[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + nombreUsuario + ")]: " + texto);
                                                 guardarMensajeGrupo(grupo.getNombreGrupo(), "[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + nombreUsuario + ")]: " + texto);
-                                                System.out.println("aqui");
                                                 aux++;
                                                 
                                             }
@@ -551,8 +550,6 @@ public class HiloDeCliente implements Runnable, ListDataListener {
                                             }
 
                                             eliminarDuplicados(mensajesGrupo);
-
-                                            System.out.println(mensajesGrupo);
 
                                             dataOutput.writeUTF("");
                                             dataOutput.writeUTF("-----------------HISTORIAL DE MENSAJES GRUPO "
@@ -790,6 +787,10 @@ public class HiloDeCliente implements Runnable, ListDataListener {
 
     public String getContrasena() {
         return contrasena;
+    }
+
+    public void setContrasena(String contrasena) {
+        this.contrasena = contrasena;
     }
 
     public ArrayList<String> getlistaMensajes() {
