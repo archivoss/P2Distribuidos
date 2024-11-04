@@ -395,11 +395,16 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                 if(texto.startsWith("@todos:")){
                     List<HiloDeCliente> lista = ServidorChat.getListaHilos();
                     String mensaje = texto.substring(7);
+                    int aux = 0;
                     for (HiloDeCliente hilo : lista){
                         hilo.dataOutput.writeUTF("[Mensaje para todos de (" + hilo.nombreUsuario + ")]: " + mensaje);
                         mensajesHistorial.add("[Mensaje para todos de (" + hilo.nombreUsuario + ")]: " + mensaje);
                         if(hilo.getNombreUsuario().equals(nombreUsuario)){
                             hilo.setMensajesHistorial("[Enviaste un mensaje para todos]: " + mensaje);
+                            if(aux == 0){
+                                guardarMensajeHilo(hilo.getNombreUsuario(), "[Enviaste un mensaje para todos]: " + mensaje);
+                                aux++;
+                            }
                         }
                     }
                 }
@@ -408,6 +413,7 @@ public class HiloDeCliente implements Runnable, ListDataListener{
                     String mensaje = texto.substring(12);
                     for (HiloDeCliente hilo : lista){
                         hilo.dataOutput.writeUTF("[MENSAJE DE EMERGENCIA]: " + mensaje);
+                        guardarMensajeHilo(hilo.getNombreUsuario(), "[Enviaste un mensaje para todos]: " + mensaje);
                     }
                 }
                 if (texto.startsWith("@historial:")) {
