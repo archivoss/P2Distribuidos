@@ -381,7 +381,6 @@ public class HiloDeCliente implements Runnable, ListDataListener {
                                             if(aux == 0){
                                                 grupo.setMensajes("[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + nombreUsuario + ")]: " + texto);
                                                 guardarMensajeGrupo(grupo.getNombreGrupo(), "[Mensaje del grupo (" + grupo.getNombreGrupo() + ") por (" + nombreUsuario + ")]: " + texto);
-                                                System.out.println("aqui");
                                                 aux++;
                                                 
                                             }
@@ -422,12 +421,20 @@ public class HiloDeCliente implements Runnable, ListDataListener {
                     }
                 }
                 if (textoFormateado.startsWith("@emergencia:")) {
+                    
                     List<HiloDeCliente> lista = ServidorChat.getListaHilos();
                     String mensaje = textoFormateado.substring(12);
-                    for (HiloDeCliente hilo : lista) {
-                        hilo.dataOutput.writeUTF("[MENSAJE DE EMERGENCIA]: " + mensaje);
-                        guardarMensajeHilo(hilo.getNombreUsuario(), "[Enviaste un mensaje para todos]: " + mensaje);
+
+                    if(lista.size()==0){
+                        dataOutput.writeUTF("No hay usuarios conectados.");
+                    }else{
+                        dataOutput.writeUTF("[Mensaje de emergencia enviado a todos]: " + mensaje);
+                        for (HiloDeCliente hilo : lista) {
+                            hilo.dataOutput.writeUTF("[MENSAJE DE EMERGENCIA]: " + mensaje);
+                            guardarMensajeHilo(hilo.getNombreUsuario(), "[Recibiste un mensaje de emergencia]: " + mensaje);
+                        }
                     }
+                    
                 }
                 if (textoFormateado.startsWith("@historial:")) {
                     List<HiloDeCliente> lista = ServidorChat.getListaHilos();
@@ -535,6 +542,7 @@ public class HiloDeCliente implements Runnable, ListDataListener {
                                 if (grupo.getNombreGrupo().equals(nombreGrupo)) {
                                     leerMensajeGrupoDesdeJson("grupos.json", nombreGrupo);
                                     for (HiloDeCliente miembro : grupo.getListaMiembros()) {
+                                        System.out.println("Miembro: " + miembro.getNombreUsuario());
                                         if (miembro.getNombreUsuario().equals(nombreUsuario)) {
                                             nombreGrupo = grupo.getNombreGrupo();
                                             if (nombreGrupo.equals("Admision")) {
@@ -551,8 +559,6 @@ public class HiloDeCliente implements Runnable, ListDataListener {
                                             }
 
                                             eliminarDuplicados(mensajesGrupo);
-
-                                            System.out.println(mensajesGrupo);
 
                                             dataOutput.writeUTF("");
                                             dataOutput.writeUTF("-----------------HISTORIAL DE MENSAJES GRUPO "
@@ -790,6 +796,10 @@ public class HiloDeCliente implements Runnable, ListDataListener {
 
     public String getContrasena() {
         return contrasena;
+    }
+
+    public void setContrasena(String contrasena) {
+        this.contrasena = contrasena;
     }
 
     public ArrayList<String> getlistaMensajes() {

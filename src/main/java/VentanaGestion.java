@@ -24,16 +24,18 @@ public class VentanaGestion extends JFrame {
     private JButton btnAgregarUsuario;
     private JButton btnChatAdmin;
     private JButton btnAgregarNuevoUsuarioAJson;
+    private JButton btnReiniciarContrasena;
     private List<Grupo> listaDeGrupos;
     private List<HiloDeCliente> listaDeUsuariosContecados;
     private List<HiloDeCliente> listaUsuariosTotal;
     private String nombreUsuario;
     private String contrasena;
+    boolean cambioClave = false;
 
 
     public VentanaGestion(List<Grupo> grupos, List<HiloDeCliente> usuariosTotal, List<HiloDeCliente> usuariosConectados) {
         setTitle("Gestión del Servidor de Chat");
-        setSize(400, 300);
+        setSize(600, 400); // Aumentar el tamaño de la ventana
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -49,19 +51,24 @@ public class VentanaGestion extends JFrame {
         JScrollPane scrollUsuarios = new JScrollPane(listaUsuarios);
         JScrollPane scrollGrupos = new JScrollPane(listaGrupos);
 
-        // Botón para agregar usuarios
-        btnAgregarUsuario = new JButton("Agregar Usuario");
+        // Botones
+        btnAgregarUsuario = new JButton("Conectar Usuario");
         btnChatAdmin = new JButton("Chat Admin");
         btnAgregarNuevoUsuarioAJson = new JButton("Agregar Nuevo Usuario a la BD");
+        btnReiniciarContrasena = new JButton("Reiniciar Contraseña");
 
+        // Panel para los botones
+        JPanel panelBotones = new JPanel();
+        panelBotones.setLayout(new GridLayout(4, 1, 10, 10)); // 4 filas, 1 columna, 10px de espacio entre componentes
+        panelBotones.add(btnAgregarUsuario);
+        panelBotones.add(btnChatAdmin);
+        panelBotones.add(btnAgregarNuevoUsuarioAJson);
+        panelBotones.add(btnReiniciarContrasena);
 
-        // Añadir el botón y el scroll a la ventana
+        // Añadir componentes a la ventana
         add(scrollUsuarios, BorderLayout.CENTER);
         add(scrollGrupos, BorderLayout.EAST);
-        add(btnChatAdmin, BorderLayout.WEST);
-        add(btnAgregarUsuario, BorderLayout.SOUTH);
-        add(btnAgregarNuevoUsuarioAJson, BorderLayout.NORTH);
-
+        add(panelBotones, BorderLayout.WEST);
 
         // Evento al seleccionar un grupo
         listaGrupos.addListSelectionListener(e -> {
@@ -84,20 +91,62 @@ public class VentanaGestion extends JFrame {
             }
         });
 
+        btnReiniciarContrasena.addActionListener(e ->{
+            reiniciarContrasena();
+            JOptionPane.showMessageDialog(this, "Se ha reiniciado la contraseña del usuario.");
+        });
+
         btnAgregarUsuario.addActionListener(e -> {
             // Lógica para agregar un usuario
             nombreUsuario = JOptionPane.showInputDialog("Ingrese el nombre del usuario");
-            contrasena = JOptionPane.showInputDialog("Ingrese la contraseña del usuario");
 
-            for(HiloDeCliente usuario : listaUsuariosTotal){
-                System.out.println(usuario.getNombreUsuario());
-                if(usuario.getNombreUsuario().equals(nombreUsuario) && usuario.getContrasena().equals(contrasena)){
-                    System.out.println("Usuario ya existe");
-                    getDatos();
-                    new ClienteChat(usuario.getNombreUsuario(), usuario.getRol());
-                    return;
+            if (nombreUsuario == null || nombreUsuario.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "El nombre del usuario no puede estar vacío.");
+                return;
+            }
+
+            for (HiloDeCliente usuario : listaUsuariosTotal) {
+                if (usuario.getNombreUsuario().equals(nombreUsuario)) {
+                    leerUsuariosDesdeJson("usuarios.json");
+                    if(!cambioClave){
+                        String nuevaContrasena = JOptionPane.showInputDialog("¿Primera vez? !Actualicemos tu contraseña " + nombreUsuario + "!");
+                        if (nuevaContrasena != null && !nuevaContrasena.trim().isEmpty()) {
+                            usuario.setContrasena(nuevaContrasena);
+                            actualizarContrasenaEnJson(nombreUsuario, nuevaContrasena, true);
+                            JOptionPane.showMessageDialog(this, "Contraseña actualizada exitosamente.");
+                            break;
+                        } else {
+                            JOptionPane.showMessageDialog(this, "La nueva contraseña no puede estar vacía.");
+                        }
+                    }
+                    
                 }
             }
+
+
+            contrasena = JOptionPane.showInputDialog("Ingrese la contraseña del usuario");
+
+            boolean usuarioExiste = false;
+
+            for (HiloDeCliente usuario : listaDeUsuariosContecados) {
+                if (usuario.getNombreUsuario().equals(nombreUsuario)) {
+                    usuarioExiste = true;
+                    break;
+                }
+            }
+            if(usuarioExiste){
+                JOptionPane.showMessageDialog(this, "El usuario ya está conectado");
+                return;
+            }else{
+                for(HiloDeCliente usuario : listaUsuariosTotal){
+                    if(usuario.getNombreUsuario().equals(nombreUsuario) && usuario.getContrasena().equals(contrasena)){
+                        getDatos();
+                        new ClienteChat(usuario.getNombreUsuario(), usuario.getRol());
+                        return;
+                    }
+                }
+            }
+            
         });
 
         btnChatAdmin.addActionListener(e -> {
@@ -122,6 +171,55 @@ public class VentanaGestion extends JFrame {
         setVisible(true);
     }
 
+    private void reiniciarContrasena() {
+        String nombreUsuario = JOptionPane.showInputDialog("Ingrese el nombre del usuario para reiniciar la contraseña");
+
+        if (nombreUsuario != null && !nombreUsuario.trim().isEmpty()) {
+            boolean usuarioEncontrado = false;
+
+            for (HiloDeCliente usuario : listaUsuariosTotal) {
+                if (usuario.getNombreUsuario().equals(nombreUsuario)) {
+                    usuarioEncontrado = true;
+                    actualizarContrasenaEnJson(usuario.getNombreUsuario(),"" ,false);
+                }
+            }
+
+            if (!usuarioEncontrado) {
+                JOptionPane.showMessageDialog(this, "Usuario no encontrado.");
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "El nombre del usuario no puede estar vacío.");
+        }
+    }
+
+    // Método para actualizar la contraseña en el archivo JSON
+    private void actualizarContrasenaEnJson(String nombreUsuario, String contrasena,boolean cambioClave) {
+        try (FileReader reader = new FileReader("usuarios.json")) {
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            JsonArray usuariosArray = jsonObject.getAsJsonArray("usuarios");
+
+            for (JsonElement usuarioElement : usuariosArray) {
+                JsonObject usuarioObject = usuarioElement.getAsJsonObject();
+                if (usuarioObject.get("nombreUsuario").getAsString().equals(nombreUsuario)) {
+                    usuarioObject.addProperty("contrasena", contrasena);
+                    usuarioObject.addProperty("cambioClave", cambioClave);
+                    break;
+                }
+            }
+
+            try (FileWriter writer = new FileWriter("usuarios.json")) {
+                gson.toJson(jsonObject, writer);
+            } catch (IOException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al guardar la nueva contraseña en la base de datos.");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al leer la base de datos.");
+        }
+    }
+
     private void agregarUsuarioAJson(String nombreUsuario, String rut, String correo, String contrasena, String rol) {
         try (FileReader reader = new FileReader("usuarios.json")) {
             Gson gson = new Gson();
@@ -131,11 +229,11 @@ public class VentanaGestion extends JFrame {
             JsonObject nuevoUsuario = new JsonObject();
             nuevoUsuario.addProperty("nombreUsuario", nombreUsuario);
             nuevoUsuario.addProperty("rol", rol); // Asignar rol según sea necesario
-            nuevoUsuario.addProperty("contrasena", contrasena);
-            nuevoUsuario.addProperty("conectado", false);
+            nuevoUsuario.addProperty("contrasena", " ");
             nuevoUsuario.addProperty("rut", rut);
             nuevoUsuario.addProperty("correo", correo);
             nuevoUsuario.addProperty("mensajes", " ");
+            nuevoUsuario.addProperty("cambioClave", false);
 
             usuariosArray.add(nuevoUsuario);
 
@@ -222,13 +320,10 @@ public class VentanaGestion extends JFrame {
         Map<String, Integer> conteoMensajes = new HashMap<>(); // Para almacenar el conteo de mensajes
         
         for (HiloDeCliente usuario : usuarios) {
-            System.out.println("hello");
-            System.out.println(usuario.nombreUsuario + "  " + usuarioSeleccionado);
             if (usuarioSeleccionado.contains(usuario.nombreUsuario)) {
                 tiempoConectado = usuario.tiempoConectado().toSeconds();
                 ArrayList<String> listaMensajes = usuario.getlistaMensajes();
 
-                System.out.println(listaMensajes);
                 conteoMensajes = contarMensajes(listaMensajes); // Obtener el conteo de mensajes
             }
         }
@@ -277,5 +372,27 @@ public class VentanaGestion extends JFrame {
         }
 
         return conteo;
+    }
+
+    public void leerUsuariosDesdeJson(String archivo) {
+        try (FileReader reader = new FileReader(archivo)) {
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            JsonArray usuariosArray = jsonObject.getAsJsonArray("usuarios");
+    
+            for (JsonElement usuarioElement : usuariosArray) {
+                JsonObject usuarioObject = usuarioElement.getAsJsonObject();
+                String nombreUsuarioJson = usuarioObject.get("nombreUsuario").getAsString();
+    
+                if (nombreUsuarioJson.equals(nombreUsuario)) {
+                    System.out.println("usuario: " + nombreUsuarioJson + " " + usuarioObject.get("cambioClave").getAsBoolean());
+                    cambioClave = usuarioObject.get("cambioClave").getAsBoolean();
+                    return;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al leer la base de datos.");
+        }
     }
 }
