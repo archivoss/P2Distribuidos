@@ -1,12 +1,21 @@
 import java.awt.BorderLayout;
-import java.awt.Container;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.util.List;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.util.List;
 
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLEditorKit;
 
 /**
  *
@@ -14,7 +23,7 @@ import javax.swing.*;
  */
 public class PanelCliente extends JPanel {
     private JScrollPane scroll;
-    private JTextArea textArea;
+    private JTextPane textArea;
     private JTextField textField;
     private JButton boton;
     private JButton btnLimpiarChat; // Nuevo botón para limpiar chat
@@ -29,14 +38,16 @@ public class PanelCliente extends JPanel {
 
     public PanelCliente(Container contenedor, String rol) {
         contenedor.setLayout(new BorderLayout());
-        textArea = new JTextArea();
+
+        textArea = new JTextPane();
+        textArea.setEditorKit(new HTMLEditorKit()); // Configurar JTextPane para aceptar HTML
         scroll = new JScrollPane(textArea);
 
         textAreaUsuarios = new JTextArea();
         textAreaUsuarios.setEditable(false);
         scrollUsuarios = new JScrollPane(textAreaUsuarios);
         scrollUsuarios.setPreferredSize(new Dimension(105, 0));
-        
+
         JPanel panel = new JPanel(new BorderLayout());
         textField = new JTextField(50);
         boton = new JButton("Enviar");
@@ -45,11 +56,11 @@ public class PanelCliente extends JPanel {
         btnMensajeAdministracion = new JButton("Mensaje Administración");
         btnCrearGrupo = new JButton("Crear Grupo");
         btnMensajeGrupo = new JButton("Mensaje Grupo");
-        btnTodos = new JButton("Todos"); 
+        btnTodos = new JButton("Todos");
         btnemergencia = new JButton("Emergencia");
-        
+
         // Configuración de colores de los botones
-        boton.setBackground(new Color(173, 216, 230)); 
+        boton.setBackground(new Color(173, 216, 230));
         Color botonesColor = new Color(255, 200, 210); // Color común para los botones
 
         // Asignar el mismo color a todos los botones
@@ -60,7 +71,7 @@ public class PanelCliente extends JPanel {
         btnCrearGrupo.setBackground(botonesColor);
         btnMensajeGrupo.setBackground(botonesColor);
         btnTodos.setBackground(botonesColor);
-        
+
         boton.setForeground(Color.black);
         btnLimpiarChat.setForeground(Color.black); // Color del texto del nuevo botón
         btnAgregarMiembros.setForeground(Color.black);
@@ -73,23 +84,22 @@ public class PanelCliente extends JPanel {
         panel.add(boton, BorderLayout.CENTER);
         panel.add(btnLimpiarChat, BorderLayout.EAST); // Añadir el botón a la derecha
 
-        if(rol.equals("Admin")){
-            JPanel panelBotonesAdmin = new JPanel(); 
+        if (rol.equals("Admin")) {
+            JPanel panelBotonesAdmin = new JPanel();
             panelBotonesAdmin.add(btnemergencia);
             contenedor.add(panelBotonesAdmin, BorderLayout.NORTH);
             contenedor.add(scroll, BorderLayout.CENTER);
             contenedor.add(panel, BorderLayout.SOUTH);
-        }else{
+        } else {
             JPanel panelBotones = new JPanel();
-            if(!rol.equals("Medicos")){
+            if (!rol.equals("Medicos")) {
                 panelBotones.add(btnMensajeGrupo);
             }
             panelBotones.add(btnMensajeAdministracion);
             panelBotones.add(btnTodos);
             panelBotones.add(btnCrearGrupo);
             panelBotones.add(btnAgregarMiembros);
-            
-            
+
             contenedor.add(scroll, BorderLayout.CENTER);
             contenedor.add(panel, BorderLayout.SOUTH);
             contenedor.add(panelBotones, BorderLayout.NORTH);
@@ -101,14 +111,12 @@ public class PanelCliente extends JPanel {
         btnLimpiarChat.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                textArea.setText(""); // Limpiar el JTextArea
+                textArea.setText(""); // Limpiar el JTextPane
             }
         });
     }
 
-    
-
-    public void addActionListener(ActionListener accion){
+    public void addActionListener(ActionListener accion) {
         textField.addActionListener(accion);
         boton.addActionListener(accion);
         btnCrearGrupo.addActionListener(accion);
@@ -116,12 +124,24 @@ public class PanelCliente extends JPanel {
         btnAgregarMiembros.addActionListener(accion);
         btnMensajeAdministracion.addActionListener(accion);
         btnTodos.addActionListener(accion);
-        // Agregar el listener para el botón "Limpiar Chat" si se necesita
-        btnLimpiarChat.addActionListener(accion);
+        // No es necesario agregar un listener para el botón "Limpiar Chat" aquí,
+        // ya que se definió en el constructor.
     }
 
     public void addTexto(String texto) {
-        textArea.append(texto);
+        // Usa HTMLEditorKit y HTMLDocument para insertar texto enriquecido sin
+        // sobrescribir contenido anterior
+        HTMLDocument doc = (HTMLDocument) textArea.getDocument();
+        HTMLEditorKit kit = (HTMLEditorKit) textArea.getEditorKit();
+
+        try {
+            // Limpiar el contenido vacío de textArea
+            if (texto != null && !texto.trim().isEmpty()) {
+                kit.insertHTML(doc, doc.getLength(), "<p>" + texto + "</p>", 0, 0, null);
+            }
+        } catch (BadLocationException | IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public String getTexto() {
