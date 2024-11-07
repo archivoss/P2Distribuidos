@@ -31,7 +31,7 @@ public class VentanaGestion extends JFrame {
     private String nombreUsuario;
     private String contrasena;
     boolean cambioClave = false;
-
+    private static final String JSON_USUARIOS = "usuarios.json";
 
     public VentanaGestion(List<Grupo> grupos, List<HiloDeCliente> usuariosTotal, List<HiloDeCliente> usuariosConectados) {
         setTitle("Gestión del Servidor de Chat");
@@ -169,6 +169,37 @@ public class VentanaGestion extends JFrame {
         });
 
         setVisible(true);
+    }
+
+    //OBTENER DESDE JSON
+    public ArrayList<String> obtenerMensajesDeUsuario(String nombreUsuario) {
+        ArrayList<String> mensajesUsuario = new ArrayList<>();
+
+        try (FileReader reader = new FileReader(JSON_USUARIOS)) {
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            JsonArray usuariosArray = jsonObject.getAsJsonArray("usuarios");
+
+            for (JsonElement usuarioElement : usuariosArray) {
+                JsonObject usuarioObject = usuarioElement.getAsJsonObject();
+                if (usuarioObject.get("nombreUsuario").getAsString().equals(nombreUsuario)) {
+                    JsonArray mensajesArray = usuarioObject.getAsJsonArray("mensajes");
+                    if (mensajesArray != null) {
+                        for (JsonElement mensajeElement : mensajesArray) {
+                            JsonObject mensajeObject = mensajeElement.getAsJsonObject();
+                            String mensaje = mensajeObject.get("mensaje").getAsString();
+                            mensajesUsuario.add(mensaje);
+                        }
+                    }
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error al leer los mensajes del usuario.");
+        }
+
+        return mensajesUsuario;
     }
 
     private void reiniciarContrasena() {
@@ -323,14 +354,20 @@ public class VentanaGestion extends JFrame {
             if (usuarioSeleccionado.contains(usuario.nombreUsuario)) {
                 tiempoConectado = usuario.tiempoConectado().toSeconds();
                 ArrayList<String> listaMensajes = usuario.getlistaMensajes();
+                ArrayList<String> listaaMensajes= obtenerMensajesDeUsuario(usuario.nombreUsuario);
+                System.out.println("mensajes de antes");
+                System.out.println(listaMensajes);
 
-                conteoMensajes = contarMensajes(listaMensajes); // Obtener el conteo de mensajes
+                System.out.println("mensjaes del json");
+                System.out.println(listaaMensajes);
+
+                conteoMensajes = contarMensajes(listaaMensajes); // Obtener el conteo de mensajes
             }
         }
         
         // Crear la ventana nueva
         JDialog nuevaVentana = new JDialog(this, "Detalles del Usuario", true);
-        nuevaVentana.setSize(300, 200); // Ajustar el tamaño si es necesario
+        nuevaVentana.setSize(400, 300); // Ajustar el tamaño si es necesario
         nuevaVentana.setLayout(new FlowLayout());
         
         JLabel labelNombreUsuario = new JLabel("Usuario: " + usuarioSeleccionado);
@@ -339,11 +376,11 @@ public class VentanaGestion extends JFrame {
         nuevaVentana.add(tiempo);
         
         // Crear un JTextArea para mostrar el conteo de mensajes
-        JTextArea textoMensajes = new JTextArea(5, 20); // Puedes ajustar el tamaño
+        JTextArea textoMensajes = new JTextArea(10, 20); // Puedes ajustar el tamaño
         textoMensajes.setEditable(false); // Hacerlo no editable
         
         // Construir el texto para el JTextArea
-        StringBuilder mensajesTexto = new StringBuilder("Destinatarios de Mensajes:\n");
+        StringBuilder mensajesTexto = new StringBuilder("Destinatarios de Mensajes:\n\n");
         for (Map.Entry<String, Integer> entry : conteoMensajes.entrySet()) {
             mensajesTexto.append(entry.getKey()).append(": ").append(entry.getValue()).append(" mensajes").append("\n");
         }
@@ -357,7 +394,7 @@ public class VentanaGestion extends JFrame {
         
     }
 
-    public static Map<String, Integer> contarMensajes(ArrayList<String> listaMensajes) {
+    /*public static Map<String, Integer> contarMensajes(ArrayList<String> listaMensajes) {
         Map<String, Integer> conteo = new HashMap<>();
 
         // Recorrer cada mensaje en la lista
@@ -370,9 +407,50 @@ public class VentanaGestion extends JFrame {
                 conteo.put(mensaje, 1);
             }
         }
+        System.out.println("conteo");
+        System.out.println(conteo);
+        return conteo;
+    }*/
 
+
+    public static Map<String, Integer> contarMensajes(ArrayList<String> listaMensajes) {
+        Map<String, Integer> conteo = new HashMap<>();
+
+        // Recorrer cada mensaje en la lista
+        for (String mensaje : listaMensajes) {
+            String usuario = obtenerUsuarioDeMensaje(mensaje);
+            if (usuario != null) {
+                // Si el usuario ya está en el mapa, incrementar el contador
+                conteo.put(usuario, conteo.getOrDefault(usuario, 0) + 1);
+            }
+        }
+        System.out.println("Conteo de mensajes por usuario:");
+        System.out.println(conteo);
         return conteo;
     }
+
+    private static String obtenerUsuarioDeMensaje(String mensaje) {
+        if (mensaje.contains("(ADMINISTRACIÓN)")) {
+            return "ADMINISTRACIÓN";
+        } else if (mensaje.contains("para todos")) {
+            return "todos";
+        } else if (mensaje.contains("Mensaje privado de (usuario")) {
+            // Mensaje recibido de un usuario específico
+            int inicio = mensaje.indexOf("(usuario") + 1;
+            int fin = mensaje.indexOf(")", inicio);
+            return mensaje.substring(inicio, fin);
+        } else if (mensaje.contains("Mensaje privado enviado a (usuario")) {
+            // Mensaje enviado a un usuario específico
+            int inicio = mensaje.indexOf("(usuario") + 1;
+            int fin = mensaje.indexOf(")", inicio);
+            return mensaje.substring(inicio, fin);
+        }
+        return null;
+    }
+
+
+
+
 
     public void leerUsuariosDesdeJson(String archivo) {
         try (FileReader reader = new FileReader(archivo)) {
